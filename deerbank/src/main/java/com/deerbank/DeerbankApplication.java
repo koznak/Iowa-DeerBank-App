@@ -17,39 +17,20 @@ public class DeerbankApplication {
     }
 
     @Bean
-    public CommandLineRunner testDatabaseConnection(DataSource dataSource) {
+    public CommandLineRunner testConnection(DataSource dataSource) {
         return args -> {
             try {
-                System.out.println("=================================");
-                System.out.println("Testing Database Connection...");
-                System.out.println("=================================");
-
-                Connection connection = dataSource.getConnection();
-
-                if (connection != null) {
-                    System.out.println("✓ Connection successful!");
-
-                    DatabaseMetaData metaData = connection.getMetaData();
-                    System.out.println("Database: " + metaData.getDatabaseProductName());
-                    System.out.println("Version: " + metaData.getDatabaseProductVersion());
-                    System.out.println("URL: " + metaData.getURL());
-                    System.out.println("User: " + metaData.getUserName());
-
-                    connection.close();
-                    System.out.println("✓ Connection closed successfully!");
-                } else {
-                    System.out.println("✗ Failed to establish connection!");
-                }
-
-                System.out.println("=================================");
-
+                System.out.println("Testing database connection...");
+                Connection conn = dataSource.getConnection();
+                System.out.println("✓ Connection successful!");
+                System.out.println("Database: " + conn.getMetaData().getDatabaseProductName());
+                conn.close();
             } catch (Exception e) {
-                System.err.println("=================================");
-                System.err.println("✗ Database Connection Failed!");
-                System.err.println("Error: " + e.getMessage());
-                System.err.println("=================================");
+                System.err.println("✗ Connection failed: " + e.getMessage());
                 e.printStackTrace();
             }
         };
     }
+
+
 }
