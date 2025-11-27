@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 
 @Service
@@ -67,5 +67,20 @@ public class AccountService {
         response.setOverdraftLimit(account.getOverdraftLimit());
         response.setUserId(account.getUserUserId());
         return response;
+    }
+    
+   
+    public AccountResponse getAccountById(Integer accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new RuntimeException("Account not found with ID: " + accountId));
+
+        return convertToResponse(account);
+    }
+    
+    public List<AccountResponse> getAllAccounts() {
+        return accountRepository.findAll()
+                .stream()
+                .map(this::convertToResponse)
+                .toList();
     }
 }
