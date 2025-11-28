@@ -1,7 +1,6 @@
 package com.deerbank.controller;
 
-import com.deerbank.dto.AccountResponse;
-import com.deerbank.dto.CreateAccountRequest;
+import com.deerbank.dto.*;
 import com.deerbank.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -41,47 +39,61 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
-    
-    @GetMapping("/{accountId}")
-    public ResponseEntity<?> getAccountById(@PathVariable Integer accountId) {
+
+    @PostMapping("/deposit")
+    public ResponseEntity<?> deposit(@Valid @RequestBody DepositRequest request) {
         try {
-            AccountResponse response = accountService.getAccountById(accountId);
+            TransactionResponse response = accountService.deposit(request);
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
-            result.put("message", "Account retrieved successfully");
+            result.put("message", response.getMessage());
             result.put("data", response);
 
-            return ResponseEntity.ok(result);
+            return ResponseEntity.status(HttpStatus.OK).body(result);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", e.getMessage());
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-        }
-    }
-    
-    @GetMapping
-    public ResponseEntity<?> getAllAccounts() {
-        try {
-            List<AccountResponse> accounts = accountService.getAllAccounts();
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "Accounts retrieved successfully");
-            result.put("data", accounts);
-
-            return ResponseEntity.ok(result);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
 
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", e.getMessage());
+            error.put("message", "Failed to process deposit: " + e.getMessage());
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
-     }
+    }
+
+    @PostMapping("/withdrawal")
+    public ResponseEntity<?> withdraw(@Valid @RequestBody WithdrawalRequest request) {
+        try {
+            TransactionResponse response = accountService.withdrawal(request);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", response.getMessage());
+            result.put("data", response);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Failed to process withdrawal: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 
 }
