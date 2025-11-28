@@ -84,7 +84,7 @@ public class AccountService {
             transaction.setCredit("Cr");
             transaction.setTransferType("DEPOSIT");
         }else{
-            transaction.setCredit("Dr");
+            transaction.setDebit("Dr");
             transaction.setTransferType("WITHDRAWAL");
         }
 
