@@ -32,8 +32,8 @@ public class Payee {
     @Column(name = "phone", length = 50)
     private String phone;
 
-    @Column(name = "account_no", length = 20)
-    private String accountNo;
+    @Column(name = "account_id", length = 20)
+    private int accountId;
 
     @Column(name = "status", length = 15)
     private String status;

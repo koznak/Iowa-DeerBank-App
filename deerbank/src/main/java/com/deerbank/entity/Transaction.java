@@ -28,10 +28,10 @@ public class Transaction {
     private String transferType;
 
     @Column(name = "transfer_acc_id")
-    private String transferAccId;
+    private Integer transferAccId;
 
     @Column(name = "received_acc_id")
-    private String receivedAccId;
+    private Integer receivedAccId;
 
     @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount;

@@ -43,19 +43,39 @@ public class PayeeController {
 
         PayeeResponse createdPayee = payeeService.createPayee(payeeRequest);
         return ResponseEntity
-                .status((HttpStatus.CREATED))
+                .status((HttpStatus.OK))
                 .body(resultMap(true,"Created Payee Successfully", createdPayee)
         );
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePayee(@PathVariable Integer id) {
+    @DeleteMapping()
+    public ResponseEntity<?> deletePayee(@RequestParam Integer id) {
 
         payeeService.deletePayee(id);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(resultMap(true,"Payee deleted successfully", ""));
+    }
+
+    @PutMapping()
+    public ResponseEntity<?> updatePayee(@RequestBody PayeeRequest payeeRequest,@RequestParam Integer id) {
+        PayeeResponse updatedPayee=payeeService.updatePayee(payeeRequest, id);
+
+        return ResponseEntity
+                .status((HttpStatus.CREATED))
+                .body(resultMap(true,"Updated data Successfully", updatedPayee)
+                );
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getPayee(@PathVariable  Integer id) {
+        PayeeResponse payeeResponse=payeeService.getPayee(id);
+
+        return ResponseEntity
+                .status((HttpStatus.OK))
+                .body(resultMap(true,"Get Payee "+id+" Successfully", payeeResponse)
+                );
     }
 
     public <T> Map<String, Object> resultMap(boolean status, String message,T data) {

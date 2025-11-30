@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BillPaymentRequest {
 
-    private String from_account_no;
-    private String to_account_no;
+    private int from_account_no;
+    private int to_account_no;
 
     private int payee_id;
     private String payment_type;

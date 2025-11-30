@@ -21,4 +21,5 @@ public class PayeeResponse {
     private String accountNo;
     private String status;
     private Integer userId;
+    private int accountId;
 }

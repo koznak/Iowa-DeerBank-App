@@ -81,7 +81,7 @@ public class AccountService {
         transaction.setTranNo(generateTransactionNumber());
         transaction.setTranDatetime(dateTime);
 
-        transaction.setReceivedAccId(String.valueOf(account.getAccountId()));
+        transaction.setReceivedAccId(account.getAccountId());
         transaction.setAmount(amount);
 
         if(drCr){
@@ -239,7 +239,7 @@ public class AccountService {
     }
 
     @Transactional
-    public Transaction transferBillPayment(String fromAcc, String toAcc, BigDecimal amount, String description, int billNo){
+    public Transaction transferBillPayment(int fromAcc, int toAcc, BigDecimal amount, String description, int billNo){
 
         String tranNo = generateTransactionNumber();
         // Debit from the Customer Acc
@@ -264,14 +264,14 @@ public class AccountService {
         transaction2.setCredit("Cr");
         transaction2.setDescription(description);
 
-        Account account1 = accountRepository.findByAccountNo(fromAcc)
+        Account account1 = accountRepository.findByAccountIdAndStatus(fromAcc, "ACTIVE")
                 .orElseThrow(() -> new ResourceNotFoundException("Your account have some issue. Contact to the Banker!"));
 
         account1.setBalance(account1.getBalance().subtract(amount));
 
         accountRepository.save(account1);
 
-        Account account2 = accountRepository.findByAccountNo(toAcc)
+        Account account2 = accountRepository.findByAccountIdAndStatus(toAcc, "ACTIVE")
                 .orElseThrow(() -> new ResourceNotFoundException("Tranfser Account is not found"));
 
         account2.setBalance(account2.getBalance().add(amount));
