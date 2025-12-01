@@ -4,19 +4,23 @@ import com.deerbank.dto.*;
 import com.deerbank.entity.Account;
 import com.deerbank.entity.Transaction;
 import com.deerbank.entity.User;
+import com.deerbank.exception.ResourceNotFoundException;
 import com.deerbank.repository.AccountRepository;
 import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 public class AccountService {
@@ -232,5 +236,50 @@ public class AccountService {
         response.setMessage("Customer account does not exist");
         return response;
 
+    }
+
+    @Transactional
+    public Transaction transferBillPayment(int fromAcc, int toAcc, BigDecimal amount, String description, int billNo){
+
+        String tranNo = generateTransactionNumber();
+        // Debit from the Customer Acc
+        Transaction transaction1 = new Transaction();
+        transaction1.setTranDatetime(LocalDateTime.now());
+        transaction1.setTransferType("TRANSFER");
+        transaction1.setReceivedAccId(toAcc);
+        transaction1.setAmount(amount);
+        transaction1.setBillPaymentPaymentId(billNo);
+        transaction1.setTranNo(tranNo);
+        transaction1.setDebit("Dr");
+        transaction1.setDescription(description);
+
+        // Credit to the Transer Acc
+        Transaction transaction2 = new Transaction();
+        transaction2.setTranDatetime(LocalDateTime.now());
+        transaction2.setTransferType("TRANSFER");
+        transaction2.setTransferAccId(fromAcc);
+        transaction2.setAmount(amount);
+        transaction2.setBillPaymentPaymentId(billNo);
+        transaction2.setTranNo(tranNo);
+        transaction2.setCredit("Cr");
+        transaction2.setDescription(description);
+
+        Account account1 = accountRepository.findByAccountIdAndStatus(fromAcc, "ACTIVE")
+                .orElseThrow(() -> new ResourceNotFoundException("Your account have some issue. Contact to the Banker!"));
+
+        account1.setBalance(account1.getBalance().subtract(amount));
+
+        accountRepository.save(account1);
+
+        Account account2 = accountRepository.findByAccountIdAndStatus(toAcc, "ACTIVE")
+                .orElseThrow(() -> new ResourceNotFoundException("Tranfser Account is not found"));
+
+        account2.setBalance(account2.getBalance().add(amount));
+
+        accountRepository.save(account2);
+
+        transactionRepository.save(transaction1);
+        Transaction tranResult=transactionRepository.save(transaction2);
+        return tranResult;
     }
 }
