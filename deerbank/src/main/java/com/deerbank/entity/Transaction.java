@@ -27,11 +27,11 @@ public class Transaction {
     @Column(name = "transfer_type", length = 10)
     private String transferType;
 
-    @Column(name = "transfer_acc_id")
-    private Integer transferAccId;
+    @Column(name = "payee_acc_id")
+    private Integer payeeAccId;
 
-    @Column(name = "received_acc_id")
-    private Integer receivedAccId;
+    @Column(name = "customer_acc_id")
+    private Integer customerAccId;
 
     @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount;

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -95,5 +96,64 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
+
+    @PostMapping("/transactions")
+    public ResponseEntity<?> getTransactions(@Valid @RequestBody GetTransactionsRequest request) {
+        try {
+            List<TransactionHistoryDTO> transactions = accountService.getTransactions(request);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Transactions retrieved successfully");
+            result.put("count", transactions.size());
+            result.put("data", transactions);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Failed to retrieve transactions: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @GetMapping("/balance")
+    public ResponseEntity<?> getTransactions(@Valid String accountNo) {
+        try {
+            List<TransactionHistoryDTO> transactions = accountService.getCustomerAccountBalance(accountNo);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Transactions retrieved successfully");
+            result.put("count", transactions.size());
+            result.put("data", transactions);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Failed to retrieve transactions: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
 
 }

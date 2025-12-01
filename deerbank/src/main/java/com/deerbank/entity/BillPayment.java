@@ -17,7 +17,7 @@ public class BillPayment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payment_id")
+    @Column(name = "ser_payment_id")
     private Integer id;
 
     @Column(name = "bill_payment_no", length = 20)
@@ -43,5 +43,5 @@ public class BillPayment {
     //Repatative payment (daily, weekly, monthly)
     private String schedular_type;
 
-    private int payee_id;
+    private int ser_payee_id;
 }

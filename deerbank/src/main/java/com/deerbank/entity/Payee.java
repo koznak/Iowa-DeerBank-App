@@ -1,12 +1,9 @@
 package com.deerbank.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "payee")
@@ -17,7 +14,7 @@ public class Payee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payee_id")
+    @Column(name = "ser_payee_id")
     private Integer id;
 
     @Column(name = "name", length = 50)
@@ -32,8 +29,8 @@ public class Payee {
     @Column(name = "phone", length = 50)
     private String phone;
 
-    @Column(name = "account_id", length = 20)
-    private int accountId;
+    @Column(name = "payee_account_no", length = 20)
+    private String accountNo;
 
     @Column(name = "status", length = 15)
     private String status;

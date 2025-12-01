@@ -45,7 +45,7 @@ public class BillPaymentServiceImpl implements BillPaymentService {
             billPayment.setStatus("ACTIVE");
         }
 
-        billPayment.setPayee_id(billPaymentRequest.getPayee_id());
+        billPayment.setSer_payee_id(billPaymentRequest.getPayee_id());
 
         BillPayment billPaymentResult=billPaymentRepository.save(billPayment);
 

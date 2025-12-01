@@ -33,7 +33,7 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeResponse createPayee(PayeeRequest payeeRequest) {
 
-        Account foundAcc=accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
+        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
                 () -> new ResourceNotFoundException("Account Not Found")
         );
 
@@ -43,7 +43,7 @@ public class PayeeServiceImpl implements PayeeService {
         payee.setEmail(payeeRequest.getEmail());
         payee.setNickname(payeeRequest.getNickname());
         payee.setPhone(payeeRequest.getPhone());
-        payee.setAccountId(foundAcc.getAccountId());
+        payee.setAccountNo(foundAcc.getAccountNo());
         payee.setStatus("Active");
         payee.setUserUserId(payeeRequest.getUserId());
 
@@ -79,7 +79,7 @@ public class PayeeServiceImpl implements PayeeService {
         payee.setEmail(payeeRequest.getEmail());
         payee.setNickname(payeeRequest.getNickname());
         payee.setPhone(payeeRequest.getPhone());
-        payee.setAccountId(foundAcc.getAccountId());
+        payee.setAccountNo(foundAcc.getAccountNo());
         payee.setStatus("Active");
         payee.setUserUserId(payeeRequest.getUserId());
 
@@ -95,7 +95,7 @@ public class PayeeServiceImpl implements PayeeService {
         Payee payeeData=payeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Payee ID cannot found"));
 
         PayeeResponse payeeResponse= convertToResponse(payeeData);
-        payeeResponse.setAccountNo(accountRepository.findById(payeeData.getAccountId()).get().getAccountNo());
+        payeeResponse.setAccountNo(accountRepository.findByAccountNo(payeeData.getAccountNo()).get().getAccountNo());
 
         return payeeResponse;
     }
@@ -107,7 +107,7 @@ public class PayeeServiceImpl implements PayeeService {
         response.setNickname(payee.getNickname());
         response.setEmail(payee.getEmail());
         response.setPhone(payee.getPhone());
-        response.setAccountId(payee.getAccountId());
+        response.setAccountNo(payee.getAccountNo());
         response.setStatus(payee.getStatus());
         response.setUserId(payee.getUserUserId());
         return response;
