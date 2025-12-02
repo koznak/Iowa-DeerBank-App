@@ -45,7 +45,12 @@ public class CreateAccountRequest {
     @DecimalMin(value = "50.00", inclusive = true, message = "Minimum initial deposit must be $50.00")
     private BigDecimal initialBalance;
 
+    @NotNull(message = "Account createdBy is required")
+    private Integer accountCreatedBy;
+
     private Integer interestRate; // Optional
 
     private Integer overdraftLimit; // Optional
+
+
 }

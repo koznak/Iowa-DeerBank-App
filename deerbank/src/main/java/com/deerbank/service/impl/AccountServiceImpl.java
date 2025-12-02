@@ -11,6 +11,7 @@ import com.deerbank.repository.UserRepository;
 import com.deerbank.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
+@Service
 public class AccountServiceImpl implements AccountService {
 
     @Autowired
@@ -35,6 +37,10 @@ public class AccountServiceImpl implements AccountService {
     public AccountResponse createAccount(CreateAccountRequest request) {
 
         LocalDateTime now = LocalDateTime.now();
+
+        if(request.getAccountCreatedBy() != 1){
+            throw new RuntimeException("Only Admin can create the account.");
+        }
 
         // 1. Create and save User
         User user = new User();
@@ -56,23 +62,24 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountNo(accountNo);
         account.setAccountType(request.getAccountType());
         account.setBalance(request.getInitialBalance());
-        account.setUserUserId(savedUser.getUserId());
+        account.setSerUserId(savedUser.getUserId());
         account.setInterestRate(request.getInterestRate() != null ? request.getInterestRate() : 0);
         account.setOverdraftLimit(request.getOverdraftLimit() != null ? request.getOverdraftLimit() : 0);
         account.setStatus("ACTIVE");
         account.setOpenedDate(LocalDateTime.now());
+        account.setAccountCreatedBy(request.getAccountCreatedBy());
 
         // Save account
         Account savedAccount = accountRepository.save(account);
 
         // Create initial deposit transaction
-        depositTransaction(savedAccount, request.getInitialBalance(), LocalDateTime.now(), true, true);
+        registerTransaction(savedAccount, request.getInitialBalance(), LocalDateTime.now(), true, true);
 
         // Convert to response DTO
         return convertToResponse(savedAccount, savedUser);
     }
 
-    private Transaction depositTransaction(Account account, BigDecimal amount, LocalDateTime dateTime, boolean initialDeposit, boolean drCr) {
+    private Transaction registerTransaction(Account account, BigDecimal amount, LocalDateTime dateTime, boolean initialDeposit, boolean drCr) {
         Transaction transaction = new Transaction();
 
         transaction.setTranNo(generateTransactionNumber());
@@ -87,12 +94,13 @@ public class AccountServiceImpl implements AccountService {
         }else{
             transaction.setDebit("Dr");
             transaction.setTransferType("WITHDRAWAL");
+            transaction.setDescription("new withdrawal made by customer");
         }
 
         if(initialDeposit) {
             transaction.setDescription("Initial deposit for account opening");
         }else{
-            transaction.setDescription("new Deposit by customer");
+            transaction.setDescription("new Deposit made by customer");
         }
 
         return transactionRepository.save(transaction);
@@ -141,7 +149,7 @@ public class AccountServiceImpl implements AccountService {
         response.setOpenedDate(account.getOpenedDate());
         response.setInterestRate(account.getInterestRate());
         response.setOverdraftLimit(account.getOverdraftLimit());
-        response.setUserId(account.getUserUserId());
+        response.setUserId(account.getSerUserId());
 
         return response;
     }
@@ -163,7 +171,7 @@ public class AccountServiceImpl implements AccountService {
             Account savedAccount = accountRepository.save(newBalAcc);
 
             // add new transaction
-            Transaction transaction = depositTransaction(savedAccount, request.getAmount(), LocalDateTime.now(), false, true);
+            Transaction transaction = registerTransaction(savedAccount, request.getAmount(), LocalDateTime.now(), false, true);
 
             // prepare response
             response.setTransactionNo(transaction.getTranNo());
@@ -193,44 +201,41 @@ public class AccountServiceImpl implements AccountService {
         TransactionResponse response = new TransactionResponse();
         Optional<Account> account = accountRepository.findByAccountNo(request.getAccountNo());
 
-        if(account.isPresent()){
-
-            Account newBalAcc = account.get();
-            BigDecimal existingAmount = newBalAcc.getBalance();
-
-            if(request.getAmount().compareTo(existingAmount) > 0){
-                response.setMessage("Requested amount is greater than deposit amount");
-                return response;
-            }
-
-            newBalAcc.setBalance(existingAmount.subtract(request.getAmount()));
-            newBalAcc.setUpdateDate(LocalDateTime.now());
-
-            //Update customer account balance
-            Account savedAccount = accountRepository.save(newBalAcc);
-
-            // add new transaction
-            Transaction transaction = depositTransaction(savedAccount, request.getAmount(), LocalDateTime.now(), false, false);
-
-            // prepare response
-            response.setTransactionNo(transaction.getTranNo());
-            response.setTransactionType(transaction.getTransferType());
-            response.setAmount(transaction.getAmount());
-
-            response.setAccountNo(savedAccount.getAccountNo());
-            response.setNewBalance(savedAccount.getBalance());
-
-            response.setPreviousBalance(existingAmount);
-            response.setNewBalance(savedAccount.getBalance());
-            response.setTransactionDate(LocalDateTime.now());
-
-            response.setMessage("new withdrawal by customer on "+ LocalDateTime.now());
-
-            return response;
-
+        if(account.isEmpty()){
+            throw new RuntimeException("Customer account does not exist");
         }
 
-        response.setMessage("Customer account does not exist");
+        Account newBalAcc = account.get();
+        BigDecimal existingAmount = newBalAcc.getBalance();
+
+        if(request.getAmount().compareTo(existingAmount) > 0){
+            response.setMessage("Requested amount is greater than deposit amount");
+            return response;
+        }
+
+        newBalAcc.setBalance(existingAmount.subtract(request.getAmount()));
+        newBalAcc.setUpdateDate(LocalDateTime.now());
+
+        //Update customer account balance
+        Account savedAccount = accountRepository.save(newBalAcc);
+
+        // add new transaction
+        Transaction transaction = registerTransaction(savedAccount, request.getAmount(), LocalDateTime.now(), false, false);
+
+        // prepare response
+        response.setTransactionNo(transaction.getTranNo());
+        response.setTransactionType(transaction.getTransferType());
+        response.setAmount(transaction.getAmount());
+
+        response.setAccountNo(savedAccount.getAccountNo());
+        response.setNewBalance(savedAccount.getBalance());
+
+        response.setPreviousBalance(existingAmount);
+        response.setNewBalance(savedAccount.getBalance());
+        response.setTransactionDate(LocalDateTime.now());
+
+        response.setMessage("new withdrawal by customer on "+ LocalDateTime.now());
+
         return response;
 
     }
@@ -244,39 +249,36 @@ public class AccountServiceImpl implements AccountService {
 
             Optional<Account> account = accountRepository.findByAccountNo(request.getAccountNo());
 
-            if(account.isPresent()){
-                Account acc = account.get();
-                List<Transaction> transactions = transactionRepository.findByAccountId(acc.getAccountId());
+            if(account.isEmpty()){
+                throw new RuntimeException("Account does not exist!");
+            }
+            Account acc = account.get();
+            List<Transaction> transactions = transactionRepository.findByAccountId(acc.getAccountId());
 
-                if(!transactions.isEmpty()) {
-                    TransactionHistoryDTO transactionHistoryDTO = new TransactionHistoryDTO();
+            if(!transactions.isEmpty()) {
+                TransactionHistoryDTO transactionHistoryDTO = new TransactionHistoryDTO();
 
-                    for (Transaction transaction : transactions) {
+                for (Transaction transaction : transactions) {
 
-                        transactionHistoryDTO.setTranId(transaction.getTranId());
-                        transactionHistoryDTO.setTranNo(transaction.getTranNo());
-                        transactionHistoryDTO.setTranDatetime(transaction.getTranDatetime());
-                        transactionHistoryDTO.setTransferType(transaction.getTransferType());
-                        transactionHistoryDTO.setAmount(transaction.getAmount());
-                        transactionHistoryDTO.setDebit(transaction.getDebit());
-                        transactionHistoryDTO.setCredit(transaction.getCredit());
-                        transactionHistoryDTO.setDescription(transaction.getDescription());
-                        transactionHistoryDTO.setTransferAccId(transaction.getPayeeAccId());
-                        transactionHistoryDTO.setReceivedAccId(transaction.getCustomerAccId());
+                    transactionHistoryDTO.setTranId(transaction.getTranId());
+                    transactionHistoryDTO.setTranNo(transaction.getTranNo());
+                    transactionHistoryDTO.setTranDatetime(transaction.getTranDatetime());
+                    transactionHistoryDTO.setTransferType(transaction.getTransferType());
+                    transactionHistoryDTO.setAmount(transaction.getAmount());
+                    transactionHistoryDTO.setDebit(transaction.getDebit());
+                    transactionHistoryDTO.setCredit(transaction.getCredit());
+                    transactionHistoryDTO.setDescription(transaction.getDescription());
+                    transactionHistoryDTO.setTransferAccId(transaction.getPayeeAccId());
+                    transactionHistoryDTO.setReceivedAccId(transaction.getCustomerAccId());
 
-                        lstTransactionHistory.add(transactionHistoryDTO);
-                    }
+                    lstTransactionHistory.add(transactionHistoryDTO);
                 }
             }
+
         }
 
         return lstTransactionHistory;
 
-    }
-
-    @Override
-    public List<TransactionHistoryDTO> getCustomerAccountBalance(String accountNo) {
-        return List.of();
     }
 
     @Transactional

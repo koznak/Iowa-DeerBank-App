@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Integer> {
 
-    @Query("SELECT t FROM transaction t WHERE t.transfer_acc_Id = :accountId OR t.received_acc_id = :accountId ORDER BY t.tranDatetime DESC")
-    List<Transaction> findByAccountId(Integer accountId);
+    @Query("SELECT t FROM Transaction t WHERE t.customerAccId = :accountId OR t.payeeAccId = :accountId ORDER BY t.tranDatetime DESC")
+    List<Transaction> findByAccountId(@Param("accountId") Integer accountId);
 
 }

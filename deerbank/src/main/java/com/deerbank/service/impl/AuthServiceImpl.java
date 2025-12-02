@@ -12,12 +12,15 @@ import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
 import com.deerbank.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+
+@Service
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
@@ -62,26 +65,29 @@ public class AuthServiceImpl implements AuthService {
             response.setUserType("CUSTOMER");
 
             // Get user details
-            User user = userRepository.findById(credential.getId())
-                    .orElse(null);
+            Optional<User> retrieveUser = userRepository.findByCredentialsId(credential.getId());
 
-            if (user != null) {
-                response.setUserId(user.getUserId());
-                response.setName(user.getName());
-                response.setDob(user.getDob());
-                response.setAddress(user.getAddress());
-                response.setContactNo(user.getContactNo());
-
-                // Get account details
-                List<Account> accounts = accountRepository.findByUserByUserId(user.getUserId());
-                if (!accounts.isEmpty()) {
-                    Account account = accounts.getFirst(); // Get first account
-                    response.setAccountId(account.getAccountId());
-                    response.setAccountNo(account.getAccountNo());
-                    response.setBalance(account.getBalance());
-                    response.setAccountType(account.getAccountType());
-                }
+            if (retrieveUser.isEmpty()) {
+                throw new RuntimeException("user not found, Unable to create the user for customer.");
             }
+
+            User user = retrieveUser.get();
+            response.setUserId(user.getUserId());
+            response.setName(user.getName());
+            response.setDob(user.getDob());
+            response.setAddress(user.getAddress());
+            response.setContactNo(user.getContactNo());
+
+            // Get account details
+            List<Account> accounts = accountRepository.findBySerUserId(user.getUserId());
+            if (!accounts.isEmpty()) {
+                Account account = accounts.getFirst(); // Get first account
+                response.setAccountId(account.getAccountId());
+                response.setAccountNo(account.getAccountNo());
+                response.setBalance(account.getBalance());
+                response.setAccountType(account.getAccountType());
+            }
+
         }
 
         return response;
@@ -123,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
         System.out.println("Created Account ID: " + savedAccount.getAccountId() + " with Credentials ID: " + savedAccount.getCredentialsId());
 
         // 3. Update user with credentials_id reference
-        Optional<User> userDetail = userRepository.findById(customerAccount.get().getUserUserId());
+        Optional<User> userDetail = userRepository.findById(customerAccount.get().getSerUserId());
 
         if(userDetail.isEmpty()) {
             throw new RuntimeException("Account does not exists");

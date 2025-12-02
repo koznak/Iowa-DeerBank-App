@@ -40,7 +40,7 @@ public class BillPayment {
 
     private LocalDateTime updated_date;
 
-    //Repatative payment (daily, weekly, monthly)
+    //Reparative payment (daily, weekly, monthly)
     private String schedular_type;
 
     private int ser_payee_id;

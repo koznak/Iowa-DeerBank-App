@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -24,9 +25,5 @@ public interface AccountService{
 
     List<TransactionHistoryDTO> getTransactions(GetTransactionsRequest request);
 
-    List<TransactionHistoryDTO> getCustomerAccountBalance(String accountNo);
-
     Transaction transferBillPayment(int fromAcc, int toAcc, BigDecimal amount, String description, int billNo);
-
-
 }

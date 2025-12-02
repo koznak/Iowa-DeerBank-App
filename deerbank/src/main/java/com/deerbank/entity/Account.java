@@ -38,8 +38,8 @@ public class Account {
     @Column(name = "update_date", columnDefinition = "DATETIME")
     private LocalDateTime updateDate;
 
-    @Column(name = "user_user_id")
-    private Integer userUserId;
+    @Column(name = "ser_user_id")
+    private Integer serUserId;
 
     @Column(name = "credentials_id")
     private Integer credentialsId;
@@ -49,4 +49,7 @@ public class Account {
 
     @Column(name = "overdraft_limit")
     private Integer overdraftLimit;
+
+    @Column(name = "account_create_by")
+    private Integer accountCreatedBy;
 }

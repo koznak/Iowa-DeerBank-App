@@ -1,5 +1,6 @@
 package com.deerbank.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,16 +13,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BillPaymentRequest {
 
-    private int from_account_no;
-    private int to_account_no;
+    @NotBlank(message = "Customer Account is required")
+    private String customer_account;
 
-    private int payee_id;
+    @NotBlank(message = "Payee Account is required")
+    private String payeeAccount;
+
     private String payment_type;
+
+    @NotBlank(message = "Username is required")
     private BigDecimal amount;
 
-    private String schedule_type;
-    private LocalDateTime schedule_date;
-    private String schedular_type;
-
+    @NotBlank(message = "Description is required")
     private String description;
 }
