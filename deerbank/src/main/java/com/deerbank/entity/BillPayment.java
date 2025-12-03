@@ -32,16 +32,22 @@ public class BillPayment {
     @Column(name = "status", length = 15)
     private String status;
 
+    @Column(name = "schedule_type")
     private String schedule_type;
 
+    @Column(name = "schedule_date")
     private String schedule_date;
 
+    @Column(name = "created_date")
     private LocalDateTime created_date;
 
+    @Column(name = "updated_date")
     private LocalDateTime updated_date;
 
     //Reparative payment (daily, weekly, monthly)
+    @Column(name = "schedular_type")
     private String schedular_type;
 
+    @Column(name = "ser_payee_id")
     private int ser_payee_id;
 }

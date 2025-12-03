@@ -55,22 +55,19 @@ public class BillPaymentServiceImpl implements BillPaymentService {
         Payee payee = retrievePayee.get();
         Account account = retrieveCustomerAccount.get();
 
-        //update balance
-        account.setBalance(account.getBalance().subtract(billPaymentRequest.getAmount()));
-        Account newAccountBalance = accountRepository.save(account);
-        System.out.println("New Customer Account Balance: "+newAccountBalance);
-
 
         //saving bill payment type in DB
         BillPayment billPayment = new BillPayment();
-        billPayment.setBillPaymentNo(generateBillNumber());
+
         billPayment.setPayment_type(billPaymentRequest.getPayment_type());
         billPayment.setAmount(billPaymentRequest.getAmount());
+        billPayment.setBillPaymentNo(generateBillNumber());
+
+
 //        billPayment.setSchedular_type(billPaymentRequest.getSchedular_type());
         billPayment.setSchedule_date(billPayment.getSchedule_date());
-        billPayment.setSchedule_date(billPayment.getSchedule_date());
         billPayment.setCreated_date(LocalDateTime.now());
-        billPayment.setUpdated_date(LocalDateTime.now());
+//        billPayment.setUpdated_date(LocalDateTime.now());
 
         if (billPaymentRequest.getPayment_type().equals("ONCE")) {
             billPayment.setStatus("DONE");
@@ -83,15 +80,18 @@ public class BillPaymentServiceImpl implements BillPaymentService {
         // 1. Safe bill detail in bill_payment table
         BillPayment billPaymentResult = billPaymentRepository.save(billPayment);
 
-        // 2. Update the balance in account table
-        Account newcustomeraccountbalance = accountRepository.save(account);
-        System.out.println("new account balance is:"+newcustomeraccountbalance.getBalance());
-
-        //3. Now register transactions in Transactions Table.
-        // 3.1 credit transaction for payee
+        //2. Now register transactions in Transactions Table.
+        // 2.1 credit transaction for payee
         registerTransaction(payee.getId(), billPaymentRequest.getAmount(),LocalDateTime.now(), false, true);
-        // 3.2 debit transaction for customer
+        // 2.2 debit transaction for customer
         Transaction transaction = registerTransaction(account.getAccountId(),  billPaymentRequest.getAmount(), LocalDateTime.now(),false, false);
+
+        // 3. Update the balance in account table
+        account.setBalance(account.getBalance().subtract(billPaymentRequest.getAmount()));
+        Account newcustomeraccountbalance = accountRepository.save(account);
+        System.out.println(" ======> new account balance is: "+newcustomeraccountbalance.getBalance());
+
+
 
         //4. make response
         BillPaymentResponse billPaymentResponse=new BillPaymentResponse();
@@ -103,16 +103,9 @@ public class BillPaymentServiceImpl implements BillPaymentService {
 
 
     private String generateBillNumber() {
-        String billNo;
         Random random = new Random();
-
-        do {
-            // Generate 10-digit account number
-            long number = 1000000000L + random.nextLong(9000000000L);
-            billNo = "BIL" + number;
-        } while (billPaymentRepository.existsByBillPaymentNo(billNo));
-
-        return billNo;
+        long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
+        return "BIL-" + number;
     }
 
     private String generateTransactionNumber() {

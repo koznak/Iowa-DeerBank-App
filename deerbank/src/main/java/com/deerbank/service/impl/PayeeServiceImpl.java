@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class PayeeServiceImpl implements PayeeService {
@@ -33,22 +35,27 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeResponse createPayee(PayeeRequest payeeRequest) {
 
-        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
-                () -> new ResourceNotFoundException("Account Not Found")
-        );
+//        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
+//                () -> new ResourceNotFoundException("Account Not Found")
+//        );
 
+        Optional<Payee> checkAccount = payeeRepository.findByAccountNo(payeeRequest.getAccountNo());
+
+        if(checkAccount.isPresent()){
+            throw new RuntimeException("Payee account already exist");
+        }
 
         Payee payee = new Payee();
         payee.setName(payeeRequest.getName());
         payee.setEmail(payeeRequest.getEmail());
         payee.setNickname(payeeRequest.getNickname());
         payee.setPhone(payeeRequest.getPhone());
-        payee.setAccountNo(foundAcc.getAccountNo());
+        payee.setAccountNo(payeeRequest.getAccountNo());
         payee.setStatus("Active");
         payee.setUserUserId(payeeRequest.getUserId());
 
 
-        Payee createdPayee=payeeRepository.save(payee);
+        Payee createdPayee = payeeRepository.save(payee);
 
 
         return convertToResponse(createdPayee);
@@ -79,7 +86,7 @@ public class PayeeServiceImpl implements PayeeService {
         payee.setEmail(payeeRequest.getEmail());
         payee.setNickname(payeeRequest.getNickname());
         payee.setPhone(payeeRequest.getPhone());
-        payee.setAccountNo(foundAcc.getAccountNo());
+        payee.setAccountNo(existingPayee.getAccountNo());
         payee.setStatus("Active");
         payee.setUserUserId(payeeRequest.getUserId());
 
@@ -112,4 +119,5 @@ public class PayeeServiceImpl implements PayeeService {
         response.setUserId(payee.getUserUserId());
         return response;
     }
+
 }
