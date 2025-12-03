@@ -52,6 +52,10 @@ public class BillPaymentServiceImpl implements BillPaymentService {
             throw new RuntimeException("Wrong Customer Account, Please put correct Customer Account Number.");
         }
 
+        if(billPaymentRequest.getAmount().compareTo(retrieveCustomerAccount.get().getBalance()) > 0){
+            throw new RuntimeException("Unable to make payment due to insufficient balance.");
+        }
+
         Payee payee = retrievePayee.get();
         Account account = retrieveCustomerAccount.get();
 
