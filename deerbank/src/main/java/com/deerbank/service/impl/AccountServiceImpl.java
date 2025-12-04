@@ -209,7 +209,7 @@ public class AccountServiceImpl implements AccountService {
         BigDecimal existingAmount = newBalAcc.getBalance();
 
         if(request.getAmount().compareTo(existingAmount) > 0){
-            response.setMessage("Requested amount is greater than deposit amount");
+            response.setMessage("Unable to withdrawal amount due to insufficient balance");
             return response;
         }
 

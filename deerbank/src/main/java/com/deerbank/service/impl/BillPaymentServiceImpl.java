@@ -86,9 +86,9 @@ public class BillPaymentServiceImpl implements BillPaymentService {
 
         //2. Now register transactions in Transactions Table.
         // 2.1 credit transaction for payee
-        registerTransaction(payee.getId(), billPaymentRequest.getAmount(),LocalDateTime.now(), false, true);
+        registerTransaction(payee.getId(), billPaymentRequest.getAmount(),LocalDateTime.now(), "External Payment", true);
         // 2.2 debit transaction for customer
-        Transaction transaction = registerTransaction(account.getAccountId(),  billPaymentRequest.getAmount(), LocalDateTime.now(),false, false);
+        Transaction transaction = registerTransaction(account.getAccountId(),  billPaymentRequest.getAmount(), LocalDateTime.now(),"Subscription Payment", false);
 
         // 3. Update the balance in account table
         account.setBalance(account.getBalance().subtract(billPaymentRequest.getAmount()));
@@ -118,7 +118,7 @@ public class BillPaymentServiceImpl implements BillPaymentService {
         return "TXN" + number;
     }
 
-    private Transaction registerTransaction(int accountId, BigDecimal amount, LocalDateTime dateTime, boolean initialDeposit, boolean drCr) {
+    private Transaction registerTransaction(int accountId, BigDecimal amount, LocalDateTime dateTime, String paymentType, boolean drCr) {
         Transaction transaction = new Transaction();
 
         transaction.setTranNo(generateTransactionNumber());
@@ -128,18 +128,14 @@ public class BillPaymentServiceImpl implements BillPaymentService {
         if(drCr){
             transaction.setPayeeAccId(accountId);
             transaction.setCredit("Cr");
-            transaction.setTransferType("Payment Received by Payee");
+            transaction.setTransferType("External Payment");
         }else{
             transaction.setCustomerAccId(accountId);
             transaction.setDebit("Dr");
             transaction.setTransferType("Payment made by Customer");
         }
 
-        if(initialDeposit) {
-            transaction.setDescription("Initial deposit for account opening");
-        }else{
-            transaction.setDescription("new Deposit by customer");
-        }
+        transaction.setDescription(paymentType);
 
         return transactionRepository.save(transaction);
 
