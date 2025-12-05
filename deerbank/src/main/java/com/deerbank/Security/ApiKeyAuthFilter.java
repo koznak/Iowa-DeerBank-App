@@ -43,7 +43,9 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
         // If no API Key is provided, allow the request to proceed.
         // Spring Security will later block it as 'unauthenticated' if the path requires it.
         if (requestApiKey == null || requestApiKey.isEmpty()) {
-            filterChain.doFilter(request, response);
+            //filterChain.doFilter(request, response);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Invalid API Key");
             return;
         }
 
