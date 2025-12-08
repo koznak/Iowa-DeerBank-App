@@ -43,7 +43,6 @@ public class SecurityConfig {
         );
     }
 
-    // 🌟 CORS CONFIGURATION: Allows access from ANY domain 🌟
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
