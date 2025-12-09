@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -30,7 +31,8 @@ public class SecurityConfig {
 
     private final ApiKeyProperties apiKeyProperties;
 
-    public SecurityConfig(ApiKeyProperties apiKeyProperties) {
+    public SecurityConfig( ApiKeyProperties apiKeyProperties) {
+//        this.jwtFilter = jwtFilter;
         this.apiKeyProperties = apiKeyProperties;
     }
 
@@ -69,7 +71,7 @@ public class SecurityConfig {
 
     // 2. Configure the Security Filter Chain, injecting the AuthenticationManager
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager, JwtFilter jwtFilter) throws Exception {
 
         // 1. Apply the CORS Configuration using the bean defined above
         http.cors(Customizer.withDefaults())
@@ -81,8 +83,11 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         // 4. Register the custom API Key Filter
-        http.addFilterBefore(
+        http
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(
                 new ApiKeyAuthFilter("X-API-Key", authenticationManager),
                 UsernamePasswordAuthenticationFilter.class
         );
@@ -94,4 +99,11 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+    @Bean
+    public JwtFilter jwtFilter(JwtService jwtService) {
+        return new JwtFilter(jwtService);
+    }
+
+
 }

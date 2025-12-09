@@ -28,4 +28,6 @@ public class LoginResponse {
     private String accountNo;
     private String accountType;
     private BigDecimal balance;
+
+    private String token;
 }

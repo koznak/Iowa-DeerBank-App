@@ -1,5 +1,6 @@
 package com.deerbank.service.impl;
 
+import com.deerbank.Security.JwtService;
 import com.deerbank.dto.LoginRequest;
 import com.deerbank.dto.LoginResponse;
 import com.deerbank.dto.RegisterRequest;
@@ -11,7 +12,12 @@ import com.deerbank.repository.CredentialRepository;
 import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
 import com.deerbank.service.AuthService;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +40,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -89,7 +101,7 @@ public class AuthServiceImpl implements AuthService {
             }
 
         }
-
+        response.setToken(getToken(credential));
         return response;
     }
 
@@ -157,6 +169,15 @@ public class AuthServiceImpl implements AuthService {
         response.setBalance(savedAccount.getBalance());
 
         return response;
+    }
+
+
+
+    public String getToken(Credential user) {
+
+        String token = jwtService.generateToken(user);
+
+        return token;
     }
 
 }
