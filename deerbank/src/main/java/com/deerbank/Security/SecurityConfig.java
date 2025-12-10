@@ -85,12 +85,12 @@ public class SecurityConfig {
 
 //        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         // 4. Register the custom API Key Filter
-        http
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(
-                new ApiKeyAuthFilter("X-API-Key", authenticationManager),
-                UsernamePasswordAuthenticationFilter.class
-        );
+//        http
+//                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+//                .addFilterBefore(
+//                new ApiKeyAuthFilter("X-API-Key", authenticationManager),
+//                UsernamePasswordAuthenticationFilter.class
+//        );
 
         // 5. Authorize Requests: Require authentication for all endpoints
         http.authorizeHttpRequests(authorize -> authorize
