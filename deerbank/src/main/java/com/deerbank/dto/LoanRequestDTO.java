@@ -12,6 +12,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class LoanRequestDTO {
 
+    @NotBlank(message = "Account number is required")
+    private String accountNumber;
+
     @NotBlank(message = "Loan type is required")
     private String loanType;
 
@@ -29,12 +32,6 @@ public class LoanRequestDTO {
     @Min(value = 6, message = "Minimum loan term is 6 months")
     @Max(value = 360, message = "Maximum loan term is 360 months")
     private Integer loanTermMonths;
-
-    @NotNull(message = "User ID is required")
-    private Integer userId;
-
-    @NotNull(message = "Account ID is required")
-    private Integer accountId;
 
     @NotBlank(message = "Purpose is required")
     @Size(min = 10, max = 500, message = "Purpose must be between 10 and 500 characters")

@@ -10,6 +10,7 @@ import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
 import com.deerbank.service.AccountService;
 import jakarta.validation.Valid;
+import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -256,29 +257,35 @@ public class AccountServiceImpl implements AccountService {
             List<Transaction> transactions = transactionRepository.findByAccountId(acc.getAccountId());
 
             if(!transactions.isEmpty()) {
-                TransactionHistoryDTO transactionHistoryDTO = new TransactionHistoryDTO();
+
 
                 for (Transaction transaction : transactions) {
 
-                    transactionHistoryDTO.setTranId(transaction.getTranId());
-                    transactionHistoryDTO.setTranNo(transaction.getTranNo());
-                    transactionHistoryDTO.setTranDatetime(transaction.getTranDatetime());
-                    transactionHistoryDTO.setTransferType(transaction.getTransferType());
-                    transactionHistoryDTO.setAmount(transaction.getAmount());
-                    transactionHistoryDTO.setDebit(transaction.getDebit());
-                    transactionHistoryDTO.setCredit(transaction.getCredit());
-                    transactionHistoryDTO.setDescription(transaction.getDescription());
-                    transactionHistoryDTO.setTransferAccId(transaction.getPayeeAccId());
-                    transactionHistoryDTO.setReceivedAccId(transaction.getCustomerAccId());
+                    TransactionHistoryDTO transactionHistoryDTO = getTransactionHistoryDTO(transaction);
 
                     lstTransactionHistory.add(transactionHistoryDTO);
                 }
             }
-
         }
 
         return lstTransactionHistory;
 
+    }
+
+    private static @NonNull TransactionHistoryDTO getTransactionHistoryDTO(Transaction transaction) {
+        TransactionHistoryDTO transactionHistoryDTO = new TransactionHistoryDTO();
+
+        transactionHistoryDTO.setTranId(transaction.getTranId());
+        transactionHistoryDTO.setTranNo(transaction.getTranNo());
+        transactionHistoryDTO.setTranDatetime(transaction.getTranDatetime());
+        transactionHistoryDTO.setTransferType(transaction.getTransferType());
+        transactionHistoryDTO.setAmount(transaction.getAmount());
+        transactionHistoryDTO.setDebit(transaction.getDebit());
+        transactionHistoryDTO.setCredit(transaction.getCredit());
+        transactionHistoryDTO.setDescription(transaction.getDescription());
+        transactionHistoryDTO.setTransferAccId(transaction.getPayeeAccId());
+        transactionHistoryDTO.setReceivedAccId(transaction.getCustomerAccId());
+        return transactionHistoryDTO;
     }
 
     @Transactional
@@ -286,44 +293,44 @@ public class AccountServiceImpl implements AccountService {
 
         String tranNo = generateTransactionNumber();
         // Debit from the Customer Acc
-        Transaction transaction1 = new Transaction();
-        transaction1.setTranDatetime(LocalDateTime.now());
-        transaction1.setTransferType("TRANSFER");
-        transaction1.setCustomerAccId(toAcc);
-        transaction1.setAmount(amount);
-        transaction1.setBillPaymentPaymentId(billNo);
-        transaction1.setTranNo(tranNo);
-        transaction1.setDebit("Dr");
-        transaction1.setDescription(description);
+        Transaction debitTransaction = new Transaction();
+        debitTransaction.setTranDatetime(LocalDateTime.now());
+        debitTransaction.setTransferType("TRANSFER");
+        debitTransaction.setCustomerAccId(toAcc);
+        debitTransaction.setAmount(amount);
+        debitTransaction.setBillPaymentPaymentId(billNo);
+        debitTransaction.setTranNo(tranNo);
+        debitTransaction.setDebit("Dr");
+        debitTransaction.setDescription(description);
 
-        // Credit to the Transer Acc
-        Transaction transaction2 = new Transaction();
-        transaction2.setTranDatetime(LocalDateTime.now());
-        transaction2.setTransferType("TRANSFER");
-        transaction2.setPayeeAccId(fromAcc);
-        transaction2.setAmount(amount);
-        transaction2.setBillPaymentPaymentId(billNo);
-        transaction2.setTranNo(tranNo);
-        transaction2.setCredit("Cr");
-        transaction2.setDescription(description);
+        // Credit to the Transfer Acc
+        Transaction creditTransaction = new Transaction();
+        creditTransaction.setTranDatetime(LocalDateTime.now());
+        creditTransaction.setTransferType("TRANSFER");
+        creditTransaction.setPayeeAccId(fromAcc);
+        creditTransaction.setAmount(amount);
+        creditTransaction.setBillPaymentPaymentId(billNo);
+        creditTransaction.setTranNo(tranNo);
+        creditTransaction.setCredit("Cr");
+        creditTransaction.setDescription(description);
 
-        Account account1 = accountRepository.findByAccountIdAndStatus(fromAcc, "ACTIVE")
+        Account senderAccount = accountRepository.findByAccountIdAndStatus(fromAcc, "ACTIVE")
                 .orElseThrow(() -> new ResourceNotFoundException("Your account have some issue. Contact to the Banker!"));
 
-        account1.setBalance(account1.getBalance().subtract(amount));
+        senderAccount.setBalance(senderAccount.getBalance().subtract(amount));
 
-        accountRepository.save(account1);
+        accountRepository.save(senderAccount);
 
-        Account account2 = accountRepository.findByAccountIdAndStatus(toAcc, "ACTIVE")
+        Account receiverAccount = accountRepository.findByAccountIdAndStatus(toAcc, "ACTIVE")
                 .orElseThrow(() -> new ResourceNotFoundException("Transfer Account is not found"));
 
-        account2.setBalance(account2.getBalance().add(amount));
+        receiverAccount.setBalance(receiverAccount.getBalance().add(amount));
 
-        accountRepository.save(account2);
+        accountRepository.save(receiverAccount);
 
-        transactionRepository.save(transaction1);
+        transactionRepository.save(debitTransaction);
 
-        return transactionRepository.save(transaction2);
+        return transactionRepository.save(creditTransaction);
     }
 
 }

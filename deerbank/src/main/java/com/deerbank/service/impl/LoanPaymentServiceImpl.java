@@ -1,6 +1,7 @@
 package com.deerbank.service.impl;
 
 import com.deerbank.dto.LoanPaymentDTO;
+import com.deerbank.dto.TransactionHistoryDTO;
 import com.deerbank.entity.Account;
 import com.deerbank.entity.Loan;
 import com.deerbank.entity.LoanPayment;
@@ -18,8 +19,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,16 +47,35 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
 
         if (!"ACTIVE".equals(loan.getStatus())) {
-            throw new RuntimeException("Can only make payments on active loans");
+            throw new RuntimeException("Can only make payments on active loans. Current status: " + loan.getStatus());
         }
 
-        // Fetch account
-        Account account = accountRepository.findById(paymentDTO.getAccountId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        // Fetch account by account number
+        Account account = accountRepository.findByAccountNo(paymentDTO.getAccountNumber())
+                .orElseThrow(() -> new RuntimeException("Account not found with account number: " + paymentDTO.getAccountNumber()));
+
+        if (!"ACTIVE".equals(account.getStatus())) {
+            throw new RuntimeException("Account must be active to make payments. Current status: " + account.getStatus());
+        }
+
+        // Validate account belongs to the loan's user
+        if (!account.getSerUserId().equals(loan.getUserId())) {
+            throw new RuntimeException("This account does not belong to the loan holder");
+        }
+
+        // Check for late payment and calculate late fee
+        BigDecimal lateFee = BigDecimal.ZERO;
+        if (loan.getNextPaymentDate() != null && LocalDate.now().isAfter(loan.getNextPaymentDate())) {
+            lateFee = BigDecimal.valueOf(25.00); // $25 late fee
+        }
+
+        BigDecimal totalRequired = paymentDTO.getPaymentAmount().add(lateFee);
 
         // Check if account has sufficient balance
-        if (account.getBalance().compareTo(paymentDTO.getPaymentAmount()) < 0) {
-            throw new RuntimeException("Insufficient balance in account");
+        if (account.getBalance().compareTo(totalRequired) < 0) {
+            throw new RuntimeException("Insufficient balance in account. Available: $" + account.getBalance() +
+                    ", Required: $" + totalRequired +
+                    (lateFee.compareTo(BigDecimal.ZERO) > 0 ? " (includes $25 late fee)" : ""));
         }
 
         // Calculate interest and principal portions
@@ -70,12 +91,9 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
                 .subtract(interestAmount)
                 .setScale(2, RoundingMode.HALF_UP);
 
-        // Check for late payment
-        BigDecimal lateFee = BigDecimal.ZERO;
+        // Determine payment status
         String paymentStatus = "COMPLETED";
-
-        if (loan.getNextPaymentDate() != null && LocalDate.now().isAfter(loan.getNextPaymentDate())) {
-            lateFee = BigDecimal.valueOf(25.00); // $25 late fee
+        if (lateFee.compareTo(BigDecimal.ZERO) > 0) {
             loan.setLatePaymentCount(loan.getLatePaymentCount() + 1);
             paymentStatus = "LATE";
         }
@@ -91,28 +109,25 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         if (newBalance.compareTo(BigDecimal.ONE) <= 0) {
             loan.setStatus("PAID_OFF");
             loan.setRemainingBalance(BigDecimal.ZERO);
+            newBalance = BigDecimal.ZERO;
         }
 
         loanRepository.save(loan);
 
-        // Debit account
+        //UPDATE ACCOUNT BALANCE - Debit from customer account
         BigDecimal totalDebit = paymentDTO.getPaymentAmount().add(lateFee);
         account.setBalance(account.getBalance().subtract(totalDebit));
         account.setUpdateDate(LocalDateTime.now());
         accountRepository.save(account);
 
-        // Create transaction record
-        Transaction transaction = new Transaction();
-        transaction.setTranNo(generateTransactionNumber());
-        transaction.setTranDatetime(LocalDateTime.now());
-        transaction.setTransferType("LOAN_PAYMENT");
-        transaction.setCustomerAccId(account.getAccountId());
-        transaction.setAmount(totalDebit);
-        transaction.setDebit(totalDebit.toString());
-        transaction.setCredit("0");
-        transaction.setDescription("Loan payment for " + loan.getLoanNo() +
-                (lateFee.compareTo(BigDecimal.ZERO) > 0 ? " (includes late fee: $" + lateFee + ")" : ""));
-        transactionRepository.save(transaction);
+        // Register transaction (Following your pattern)
+        Transaction transaction = registerLoanPaymentTransaction(
+                account.getAccountId(),
+                totalDebit,
+                LocalDateTime.now(),
+                loan.getLoanNo(),
+                lateFee
+        );
 
         // Create payment record
         LoanPayment payment = new LoanPayment();
@@ -125,14 +140,14 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         payment.setPaymentDate(LocalDateTime.now());
         payment.setPaymentStatus(paymentStatus);
         payment.setPaymentMethod(paymentDTO.getPaymentMethod());
-        payment.setAccountId(paymentDTO.getAccountId());
+        payment.setAccountId(account.getAccountId());
         payment.setLateFee(lateFee);
         payment.setNotes(paymentDTO.getNotes());
         payment.setTransactionId(transaction.getTranId());
         payment.setCreatedDate(LocalDateTime.now());
 
         LoanPayment savedPayment = loanPaymentRepository.save(payment);
-        return convertToDTO(savedPayment, loan);
+        return convertToDTO(savedPayment, loan, account);
     }
 
     @Override
@@ -177,7 +192,6 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         LoanPayment payment = loanPaymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
 
-        // Only allow deletion of failed payments
         if ("COMPLETED".equals(payment.getPaymentStatus()) || "LATE".equals(payment.getPaymentStatus())) {
             throw new RuntimeException("Cannot delete completed payments");
         }
@@ -185,14 +199,118 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         loanPaymentRepository.delete(payment);
     }
 
-    // Helper Methods
+    //Get loan payment transaction history by loan ID
+    @Override
+    public List<TransactionHistoryDTO> getLoanPaymentTransactionHistory(Integer loanId) {
+        List<TransactionHistoryDTO> transactionHistory = new ArrayList<>();
+
+        // Get loan
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new RuntimeException("Loan not found with ID: " + loanId));
+
+        // Get account
+        Account account = accountRepository.findById(loan.getAccountId())
+                .orElseThrow(() -> new RuntimeException("Account not found for this loan"));
+
+        // Get all transactions for this account
+        List<Transaction> transactions = transactionRepository.findByAccountId(account.getAccountId());
+
+        // Filter only LOAN_PAYMENT and LOAN_DISBURSEMENT transactions
+        for (Transaction transaction : transactions) {
+            if ("LOAN_PAYMENT".equals(transaction.getTransferType()) ||
+                    "LOAN_DISBURSEMENT".equals(transaction.getTransferType())) {
+
+                TransactionHistoryDTO dto = new TransactionHistoryDTO();
+                dto.setTranId(transaction.getTranId());
+                dto.setTranNo(transaction.getTranNo());
+                dto.setTranDatetime(transaction.getTranDatetime());
+                dto.setTransferType(transaction.getTransferType());
+                dto.setAmount(transaction.getAmount());
+                dto.setDebit(transaction.getDebit());
+                dto.setCredit(transaction.getCredit());
+                dto.setDescription(transaction.getDescription());
+                dto.setTransferAccId(transaction.getPayeeAccId());
+                dto.setReceivedAccId(transaction.getCustomerAccId());
+
+                transactionHistory.add(dto);
+            }
+        }
+
+        return transactionHistory;
+    }
+
+    // Get loan payment transaction history by account number
+    @Override
+    public List<TransactionHistoryDTO> getLoanPaymentTransactionHistoryByAccountNo(String accountNo) {
+        List<TransactionHistoryDTO> transactionHistory = new ArrayList<>();
+
+        // Get account
+        Account account = accountRepository.findByAccountNo(accountNo)
+                .orElseThrow(() -> new RuntimeException("Account not found with account number: " + accountNo));
+
+        // Get all transactions for this account
+        List<Transaction> transactions = transactionRepository.findByAccountId(account.getAccountId());
+
+        // Filter only LOAN_PAYMENT and LOAN_DISBURSEMENT transactions
+        for (Transaction transaction : transactions) {
+            if ("LOAN_PAYMENT".equals(transaction.getTransferType()) ||
+                    "LOAN_DISBURSEMENT".equals(transaction.getTransferType())) {
+
+                TransactionHistoryDTO dto = new TransactionHistoryDTO();
+                dto.setTranId(transaction.getTranId());
+                dto.setTranNo(transaction.getTranNo());
+                dto.setTranDatetime(transaction.getTranDatetime());
+                dto.setTransferType(transaction.getTransferType());
+                dto.setAmount(transaction.getAmount());
+                dto.setDebit(transaction.getDebit());
+                dto.setCredit(transaction.getCredit());
+                dto.setDescription(transaction.getDescription());
+                dto.setTransferAccId(transaction.getPayeeAccId());
+                dto.setReceivedAccId(transaction.getCustomerAccId());
+
+                transactionHistory.add(dto);
+            }
+        }
+
+        return transactionHistory;
+    }
+
+    /**
+     * Register loan payment transaction
+     * Creates a DEBIT entry for the customer account
+     */
+    private Transaction registerLoanPaymentTransaction(int accountId, BigDecimal amount,
+                                                       LocalDateTime dateTime, String loanNo,
+                                                       BigDecimal lateFee) {
+        Transaction transaction = new Transaction();
+
+        transaction.setTranNo(generateTransactionNumber());
+        transaction.setTranDatetime(dateTime);
+        transaction.setAmount(amount);
+        transaction.setCustomerAccId(accountId);
+        transaction.setDebit("Dr");  // Debit from customer account
+        transaction.setTransferType("LOAN_PAYMENT");
+
+        // Build description
+        String description = "Loan payment for " + loanNo;
+        if (lateFee.compareTo(BigDecimal.ZERO) > 0) {
+            description += " (includes late fee: $" + lateFee + ")";
+        }
+        transaction.setDescription(description);
+
+        return transactionRepository.save(transaction);
+    }
 
     private String generatePaymentNumber() {
-        return "LP" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        Random random = new Random();
+        long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
+        return "LP-" + number;
     }
 
     private String generateTransactionNumber() {
-        return "TXN" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
+        Random random = new Random();
+        long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
+        return "TXN" + number;
     }
 
     private LoanPaymentDTO convertToDTO(LoanPayment payment) {
@@ -207,11 +325,15 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         dto.setPaymentDate(payment.getPaymentDate());
         dto.setPaymentStatus(payment.getPaymentStatus());
         dto.setPaymentMethod(payment.getPaymentMethod());
-        dto.setAccountId(payment.getAccountId());
         dto.setLateFee(payment.getLateFee());
         dto.setNotes(payment.getNotes());
 
-        // Fetch loan number
+        if (payment.getAccountId() != null) {
+            accountRepository.findById(payment.getAccountId()).ifPresent(account ->
+                    dto.setAccountNumber(account.getAccountNo())
+            );
+        }
+
         if (payment.getLoanId() != null) {
             loanRepository.findById(payment.getLoanId()).ifPresent(loan ->
                     dto.setLoanNo(loan.getLoanNo())
@@ -221,9 +343,10 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         return dto;
     }
 
-    private LoanPaymentDTO convertToDTO(LoanPayment payment, Loan loan) {
+    private LoanPaymentDTO convertToDTO(LoanPayment payment, Loan loan, Account account) {
         LoanPaymentDTO dto = convertToDTO(payment);
         dto.setLoanNo(loan.getLoanNo());
+        dto.setAccountNumber(account.getAccountNo());
         return dto;
     }
 }

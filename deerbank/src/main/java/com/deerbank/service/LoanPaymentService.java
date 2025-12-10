@@ -1,6 +1,7 @@
 package com.deerbank.service;
 
 import com.deerbank.dto.LoanPaymentDTO;
+import com.deerbank.dto.TransactionHistoryDTO;
 
 import java.util.List;
 
@@ -21,4 +22,8 @@ public interface LoanPaymentService {
     Long countPaymentsByLoanId(Integer loanId);
 
     void deletePayment(Integer paymentId);
+
+    List<TransactionHistoryDTO> getLoanPaymentTransactionHistory(Integer loanId);
+
+    List<TransactionHistoryDTO> getLoanPaymentTransactionHistoryByAccountNo(String accountNo);
 }

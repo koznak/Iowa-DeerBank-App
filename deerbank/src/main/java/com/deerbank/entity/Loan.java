@@ -9,6 +9,15 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "loan")
 @Data
@@ -21,11 +30,11 @@ public class Loan {
     @Column(name = "loan_id")
     private Integer loanId;
 
-    @Column(name = "loan_no", length = 20, unique = true)
+    @Column(name = "loan_no", length = 30, unique = true)
     private String loanNo;
 
     @Column(name = "loan_type", length = 20)
-    private String loanType; // PERSONAL, HOME, AUTO, BUSINESS, EDUCATION
+    private String loanType;
 
     @Column(name = "principal_amount", precision = 15, scale = 2)
     private BigDecimal principalAmount;
@@ -43,7 +52,7 @@ public class Loan {
     private BigDecimal remainingBalance;
 
     @Column(name = "status", length = 20)
-    private String status; // PENDING, APPROVED, DISBURSED, ACTIVE, PAID_OFF, REJECTED, DEFAULTED
+    private String status;
 
     @Column(name = "application_date", columnDefinition = "DATETIME")
     private LocalDateTime applicationDate;

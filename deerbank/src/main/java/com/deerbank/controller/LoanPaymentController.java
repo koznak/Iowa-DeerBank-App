@@ -1,6 +1,7 @@
 package com.deerbank.controller;
 
 import com.deerbank.dto.LoanPaymentDTO;
+import com.deerbank.dto.TransactionHistoryDTO;
 import com.deerbank.service.LoanPaymentService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +89,28 @@ public class LoanPaymentController {
         try {
             loanPaymentService.deletePayment(paymentId);
             return ResponseEntity.ok(createSuccessResponse("Payment deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+
+    //Get loan payment transaction history by loan ID
+    @GetMapping("/loan/{loanId}/transactions")
+    public ResponseEntity<?> getLoanPaymentTransactionHistory(@PathVariable Integer loanId) {
+        try {
+            List<TransactionHistoryDTO> transactions = loanPaymentService.getLoanPaymentTransactionHistory(loanId);
+            return ResponseEntity.ok(transactions);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
+        }
+    }
+
+    //Get loan payment transaction history by account number
+    @GetMapping("/account/{accountNo}/transactions")
+    public ResponseEntity<?> getLoanPaymentTransactionHistoryByAccountNo(@PathVariable String accountNo) {
+        try {
+            List<TransactionHistoryDTO> transactions = loanPaymentService.getLoanPaymentTransactionHistoryByAccountNo(accountNo);
+            return ResponseEntity.ok(transactions);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(createErrorResponse(e.getMessage()));
         }

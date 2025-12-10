@@ -20,7 +20,7 @@ public class LoanPayment {
     @Column(name = "payment_id")
     private Integer paymentId;
 
-    @Column(name = "payment_no", length = 20, unique = true)
+    @Column(name = "payment_no", length = 30, unique = true)
     private String paymentNo;
 
     @Column(name = "loan_id")
@@ -42,10 +42,10 @@ public class LoanPayment {
     private LocalDateTime paymentDate;
 
     @Column(name = "payment_status", length = 20)
-    private String paymentStatus; // COMPLETED, PENDING, FAILED, LATE
+    private String paymentStatus;
 
     @Column(name = "payment_method", length = 20)
-    private String paymentMethod; // ACCOUNT_DEBIT, ONLINE, CHECK, CASH
+    private String paymentMethod;
 
     @Column(name = "transaction_id")
     private Integer transactionId;

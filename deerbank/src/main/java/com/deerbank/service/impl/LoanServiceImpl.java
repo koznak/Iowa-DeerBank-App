@@ -4,9 +4,11 @@ import com.deerbank.dto.LoanDTO;
 import com.deerbank.dto.LoanRequestDTO;
 import com.deerbank.entity.Account;
 import com.deerbank.entity.Loan;
+import com.deerbank.entity.Transaction;
 import com.deerbank.entity.User;
 import com.deerbank.repository.AccountRepository;
 import com.deerbank.repository.LoanRepository;
+import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
 import com.deerbank.service.LoanService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,23 +37,27 @@ public class LoanServiceImpl implements LoanService {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     @Override
     public LoanDTO applyForLoan(LoanRequestDTO loanRequestDTO) {
-        // Verify user and account exist
-        User user = userRepository.findById(loanRequestDTO.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Account account = accountRepository.findByAccountNo(loanRequestDTO.getAccountNumber())
+                .orElseThrow(() -> new RuntimeException("Account not found with account number: " + loanRequestDTO.getAccountNumber()));
 
-        Account account = accountRepository.findById(loanRequestDTO.getAccountId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        if (!"ACTIVE".equals(account.getStatus())) {
+            throw new RuntimeException("Account must be active to apply for loan. Current status: " + account.getStatus());
+        }
 
-        // Calculate monthly payment using loan amortization formula
+        User user = userRepository.findById(account.getSerUserId())
+                .orElseThrow(() -> new RuntimeException("User not found for this account"));
+
         BigDecimal monthlyPayment = calculateMonthlyPayment(
                 loanRequestDTO.getPrincipalAmount(),
                 loanRequestDTO.getInterestRate(),
                 loanRequestDTO.getLoanTermMonths()
         );
 
-        // Create loan entity
         Loan loan = new Loan();
         loan.setLoanNo(generateLoanNumber());
         loan.setLoanType(loanRequestDTO.getLoanType());
@@ -63,8 +70,8 @@ public class LoanServiceImpl implements LoanService {
         loan.setApplicationDate(LocalDateTime.now());
         loan.setPurpose(loanRequestDTO.getPurpose());
         loan.setCollateral(loanRequestDTO.getCollateral());
-        loan.setUserId(loanRequestDTO.getUserId());
-        loan.setAccountId(loanRequestDTO.getAccountId());
+        loan.setUserId(user.getUserId());
+        loan.setAccountId(account.getAccountId());
         loan.setCreatedDate(LocalDateTime.now());
         loan.setTotalPaymentsMade(0);
         loan.setLatePaymentCount(0);
@@ -120,11 +127,19 @@ public class LoanServiceImpl implements LoanService {
         Account account = accountRepository.findById(loan.getAccountId())
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        // Credit the loan amount to the account
+        // CREDIT the loan amount to the customer account
         BigDecimal newBalance = account.getBalance().add(loan.getPrincipalAmount());
         account.setBalance(newBalance);
         account.setUpdateDate(LocalDateTime.now());
         accountRepository.save(account);
+
+        // Register transaction for loan disbursement (CREDIT to customer account)
+        registerLoanDisbursementTransaction(
+                account.getAccountId(),
+                loan.getPrincipalAmount(),
+                LocalDateTime.now(),
+                loan.getLoanNo()
+        );
 
         // Update loan status
         loan.setStatus("ACTIVE");
@@ -205,19 +220,14 @@ public class LoanServiceImpl implements LoanService {
         loanRepository.delete(loan);
     }
 
-    // Helper Methods
-
     private BigDecimal calculateMonthlyPayment(BigDecimal principal, BigDecimal annualRate, Integer months) {
-        // Monthly interest rate
         BigDecimal monthlyRate = annualRate.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)
                 .divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
 
-        // If interest rate is 0, simple division
         if (monthlyRate.compareTo(BigDecimal.ZERO) == 0) {
             return principal.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
         }
 
-        // EMI = [P x R x (1+R)^N] / [(1+R)^N-1]
         BigDecimal onePlusR = BigDecimal.ONE.add(monthlyRate);
         BigDecimal power = onePlusR.pow(months);
 
@@ -228,7 +238,9 @@ public class LoanServiceImpl implements LoanService {
     }
 
     private String generateLoanNumber() {
-        return "LN" + System.currentTimeMillis() + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        Random random = new Random();
+        long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
+        return "LN-" + number;  // This will be exactly 13 characters: LN-1234567890
     }
 
     private LoanDTO convertToDTO(Loan loan) {
@@ -254,7 +266,6 @@ public class LoanServiceImpl implements LoanService {
         dto.setTotalPaymentsMade(loan.getTotalPaymentsMade());
         dto.setLatePaymentCount(loan.getLatePaymentCount());
 
-        // Fetch additional info
         if (loan.getUserId() != null) {
             userRepository.findById(loan.getUserId()).ifPresent(user ->
                     dto.setUserName(user.getName())
@@ -275,4 +286,30 @@ public class LoanServiceImpl implements LoanService {
         dto.setAccountNo(account.getAccountNo());
         return dto;
     }
+
+    /**
+     * Register loan disbursement transaction
+     * Creates a CREDIT entry for the customer account
+     */
+    private Transaction registerLoanDisbursementTransaction(int accountId, BigDecimal amount,
+                                                            LocalDateTime dateTime, String loanNo) {
+        Transaction transaction = new Transaction();
+
+        transaction.setTranNo(generateTransactionNumber());
+        transaction.setTranDatetime(dateTime);
+        transaction.setAmount(amount);
+        transaction.setCustomerAccId(accountId);
+        transaction.setCredit("Cr");  // Credit to customer account
+        transaction.setTransferType("LOAN_DISBURSEMENT");
+        transaction.setDescription("Loan disbursement for " + loanNo);
+
+        return transactionRepository.save(transaction);
+    }
+
+    private String generateTransactionNumber() {
+        Random random = new Random();
+        long number = 1000000000L + (long)(random.nextDouble() * 9000000000L);
+        return "TXN" + number;
+    }
+
 }

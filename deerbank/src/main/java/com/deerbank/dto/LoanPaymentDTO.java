@@ -34,8 +34,8 @@ public class LoanPaymentDTO {
     @NotBlank(message = "Payment method is required")
     private String paymentMethod;
 
-    @NotNull(message = "Account ID is required")
-    private Integer accountId;
+    @NotBlank(message = "Account number is required")
+    private String accountNumber;
 
     private BigDecimal lateFee;
     private String notes;

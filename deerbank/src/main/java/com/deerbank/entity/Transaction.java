@@ -24,7 +24,7 @@ public class Transaction {
     @Column(name = "tran_datetime", columnDefinition = "DATETIME")
     private LocalDateTime tranDatetime;
 
-    @Column(name = "transfer_type", length = 10)
+    @Column(name = "transfer_type", length = 20)
     private String transferType;
 
     @Column(name = "payee_acc_id")
