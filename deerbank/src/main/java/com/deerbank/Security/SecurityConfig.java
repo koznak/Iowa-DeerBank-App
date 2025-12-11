@@ -83,7 +83,7 @@ public class SecurityConfig {
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         // 4. Register the custom API Key Filter
 //        http
 //                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -94,7 +94,11 @@ public class SecurityConfig {
 
         // 5. Authorize Requests: Require authentication for all endpoints
         http.authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated()
+                .requestMatchers(
+                        "/api/auth/*"
+                ).permitAll()          // 👈 these do NOT require JWT
+
+                .anyRequest().authenticated() // 👈 everything else requires JWT
         );
 
         return http.build();

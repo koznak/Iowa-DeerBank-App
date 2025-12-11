@@ -26,29 +26,24 @@ public class JwtFilter extends OncePerRequestFilter {
 
         //read token from the authorization header
         String authHeader = request.getHeader("Authorization");
-        System.out.println("JWT Filter url : "+ request.getRequestURI());
-        if(!(request.getRequestURI().equals("/api/auth/login") || request.getRequestURI().equals("/api/auth/register"))){
-            if (authHeader != null && authHeader.startsWith("Bearer ") ) {
-                String token = authHeader.substring(7);
-                //Get username from the token
-                String username= jwtService.parseSignedClaims(token).getSubject();
+//        System.out.println("JWT Filter url : "+ request.getRequestURI());
+//        if(!(request.getRequestURI().equals("/api/auth/login") || request.getRequestURI().equals("/api/auth/register"))){
+        if (authHeader != null && authHeader.startsWith("Bearer ") ) {
+            String token = authHeader.substring(7);
+            //Get username from the token
+            String username= jwtService.parseSignedClaims(token).getSubject();
 
-                if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
-                    SecurityContextHolder.getContext()
-                                         .setAuthentication(
-                                                 new UsernamePasswordAuthenticationToken(
-                                                         username,
-                                                         null,
-                                                         null));
-                }
+            if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+                SecurityContextHolder.getContext()
+                                     .setAuthentication(
+                                             new UsernamePasswordAuthenticationToken(
+                                                     username,
+                                                     null,
+                                                     null));
+            }
 
-            }
-            else{
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Invalid Token");
-                return;
-            }
         }
+
         filterChain.doFilter(request, response);
 
     }

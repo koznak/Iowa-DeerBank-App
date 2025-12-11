@@ -1,5 +1,6 @@
 package com.deerbank.Security;
 
+import com.deerbank.entity.Credential;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -25,13 +26,14 @@ public class JwtService {
 
     public String generateToken(UserDetails userDetails) {
 
-
+        Credential  credential = (Credential) userDetails;
         return Jwts.builder()
                 .signWith(signInKey())
                 .issuedAt(new Date())
                 .issuer("miu.edu")
                 .expiration(new Date(new Date().getTime()+ 1000L *60*expiration))
                 .subject(userDetails.getUsername())
+                .claim("userId", credential.getId())
                 .claim("authorities", populateAuthorities(userDetails.getAuthorities()))
                 .compact();
     }
