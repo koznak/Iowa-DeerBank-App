@@ -25,5 +25,5 @@ public interface AccountService{
 
     List<TransactionHistoryDTO> getTransactions(GetTransactionsRequest request);
 
-    Transaction transferBillPayment(int fromAcc, int toAcc, BigDecimal amount, String description, int billNo);
+    TransferResponse transferBetweenAccounts(TransferRequest request);
 }

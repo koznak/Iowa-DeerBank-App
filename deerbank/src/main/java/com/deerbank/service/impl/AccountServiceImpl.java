@@ -4,7 +4,6 @@ import com.deerbank.dto.*;
 import com.deerbank.entity.Account;
 import com.deerbank.entity.Transaction;
 import com.deerbank.entity.User;
-import com.deerbank.exception.ResourceNotFoundException;
 import com.deerbank.repository.AccountRepository;
 import com.deerbank.repository.TransactionRepository;
 import com.deerbank.repository.UserRepository;
@@ -288,7 +287,8 @@ public class AccountServiceImpl implements AccountService {
         return transactionHistoryDTO;
     }
 
-    @Transactional
+    /**
+   // @Transactional
     public Transaction transferBillPayment(int fromAcc, int toAcc, BigDecimal amount, String description, int billNo){
 
         String tranNo = generateTransactionNumber();
@@ -332,5 +332,98 @@ public class AccountServiceImpl implements AccountService {
 
         return transactionRepository.save(creditTransaction);
     }
+**/
+    @Override
+    @Transactional
+    public TransferResponse transferBetweenAccounts(@Valid TransferRequest request) {
+
+        TransferResponse response = new TransferResponse();
+
+        // Validate: Cannot transfer to same account
+        if (request.getFromAccountNo().equals(request.getToAccountNo())) {
+            throw new RuntimeException("Cannot transfer to the same account");
+        }
+
+        // 1. Get sender account
+        Account senderAccount = accountRepository.findByAccountNoAndStatus(request.getFromAccountNo(), "ACTIVE")
+                .orElseThrow(() -> new RuntimeException("Sender account not found or inactive: " + request.getFromAccountNo()));
+
+        // 2. Get receiver account
+        Account receiverAccount = accountRepository.findByAccountNoAndStatus(request.getToAccountNo(), "ACTIVE")
+                .orElseThrow(() -> new RuntimeException("Receiver account not found or inactive: " + request.getToAccountNo()));
+
+        // 3. Check sufficient balance
+        if (senderAccount.getBalance().compareTo(request.getAmount()) < 0) {
+            throw new RuntimeException("Insufficient balance. Available: $" + senderAccount.getBalance() +
+                    ", Required: $" + request.getAmount());
+        }
+
+        // 4. Store original balances for response
+        BigDecimal senderPreviousBalance = senderAccount.getBalance();
+        BigDecimal receiverPreviousBalance = receiverAccount.getBalance();
+
+        // 5. Update sender account (DEBIT)
+        senderAccount.setBalance(senderAccount.getBalance().subtract(request.getAmount()));
+        senderAccount.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(senderAccount);
+
+        // 6. Update receiver account (CREDIT)
+        receiverAccount.setBalance(receiverAccount.getBalance().add(request.getAmount()));
+        receiverAccount.setUpdateDate(LocalDateTime.now());
+        accountRepository.save(receiverAccount);
+
+        // 7. Create DEBIT transaction for sender
+        String debitTranNo = generateTransactionNumber();
+        Transaction debitTransaction = new Transaction();
+        debitTransaction.setTranNo(debitTranNo);  // UNIQUE transaction number
+        debitTransaction.setTranDatetime(LocalDateTime.now());
+        debitTransaction.setTransferType("TRANSFER");
+        debitTransaction.setCustomerAccId(senderAccount.getAccountId());
+        debitTransaction.setPayeeAccId(receiverAccount.getAccountId());
+        debitTransaction.setAmount(request.getAmount());
+        debitTransaction.setDebit("Dr");
+        debitTransaction.setDescription(request.getDescription() != null ?
+                request.getDescription() :
+                "Transfer to " + request.getToAccountNo());
+        transactionRepository.save(debitTransaction);
+
+        // 8. Create CREDIT transaction for receiver
+        String creditTranNo = generateTransactionNumber();
+        Transaction creditTransaction = new Transaction();
+        creditTransaction.setTranNo(creditTranNo);  // UNIQUE transaction number
+        creditTransaction.setTranDatetime(LocalDateTime.now());
+        creditTransaction.setTransferType("TRANSFER");
+        creditTransaction.setCustomerAccId(receiverAccount.getAccountId());
+        creditTransaction.setPayeeAccId(senderAccount.getAccountId());
+        creditTransaction.setAmount(request.getAmount());
+        creditTransaction.setCredit("Cr");
+        creditTransaction.setDescription(request.getDescription() != null ?
+                request.getDescription() :
+                "Transfer from " + request.getFromAccountNo());
+        transactionRepository.save(creditTransaction);
+
+        // 9. Build response
+        response.setTransactionNo(debitTranNo + " / " + creditTranNo);
+        response.setTransferType("TRANSFER");
+
+        // Sender details
+        response.setFromAccountNo(request.getFromAccountNo());
+        response.setSenderPreviousBalance(senderPreviousBalance);
+        response.setSenderNewBalance(senderAccount.getBalance());
+
+        // Receiver details
+        response.setToAccountNo(request.getToAccountNo());
+        response.setReceiverPreviousBalance(receiverPreviousBalance);
+        response.setReceiverNewBalance(receiverAccount.getBalance());
+
+        // Transfer details
+        response.setAmount(request.getAmount());
+        response.setDescription(request.getDescription());
+        response.setTransactionDate(LocalDateTime.now());
+        response.setMessage("Transfer completed successfully");
+
+        return response;
+    }
+
 
 }
