@@ -93,8 +93,17 @@ public class SecurityConfig {
 //        );
 
         // 5. Authorize Requests: Require authentication for all endpoints
+//        http.authorizeHttpRequests(authorize -> authorize
+//                .anyRequest().authenticated()
+//        );
+
         http.authorizeHttpRequests(authorize -> authorize
-                .anyRequest().authenticated()
+                // Public access to auth endpoints
+                .requestMatchers("/api/auth/**").permitAll()
+
+                //  TEMPORARY CHANGE: Allow ALL requests to prevent 403 errors
+                // Change this back to .authenticated() when you re-enable the API Key!
+                .anyRequest().permitAll()
         );
 
         return http.build();
