@@ -20,6 +20,9 @@ public class JwtService {
     @Value("${jwt.secretKey}")
     private String SECRET;
 
+    @Value("${jwt.expiration}")
+    private int expiration;
+
     public String generateToken(UserDetails userDetails) {
 
 
@@ -27,7 +30,7 @@ public class JwtService {
                 .signWith(signInKey())
                 .issuedAt(new Date())
                 .issuer("miu.edu")
-                .expiration(new Date(new Date().getTime()+1000*60))
+                .expiration(new Date(new Date().getTime()+ 1000L *60*expiration))
                 .subject(userDetails.getUsername())
                 .claim("authorities", populateAuthorities(userDetails.getAuthorities()))
                 .compact();

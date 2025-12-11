@@ -1,0 +1,885 @@
+{
+	"info": {
+		"_postman_id": "23eb497a-6981-4816-9021-1a0b1ecb47d2",
+		"name": "Deerbank",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29223123",
+		"_collection_link": "https://deeabank.postman.co/workspace/DeeaBank-Workspace~0eace5a0-aeac-4b50-8ea8-1831f6aadd96/collection/19493662-23eb497a-6981-4816-9021-1a0b1ecb47d2?action=share&source=collection_link&creator=29223123"
+	},
+	"item": [
+		{
+			"name": "Loan API",
+			"item": [
+				{
+					"name": "Apply Loan",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NjUzOTc4NDksImlzcyI6Im1pdS5lZHUiLCJleHAiOjE3NjUzOTc5MDksInN1YiI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOiIifQ.KvTGaX2_lePL9iJmwcBK9B8c6JwvrNm-QXs7C5bHn4P5dYTBMsFkJeT0rDaU8X8K6X-z5c7BuWhvsFC_w3th6A",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"loanType\": \"PERSONAL\",\r\n  \"principalAmount\": 50000.00,\r\n  \"interestRate\": 8.5,\r\n  \"loanTermMonths\": 36,\r\n  \"purpose\": \"Home renovation including kitchen remodeling and bathroom upgrades\",\r\n  \"collateral\": \"Property deed as collateral\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans/apply",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"apply"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Loan",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"loanType\": \"PERSONAL\",\r\n  \"principalAmount\": 50000.00,\r\n  \"interestRate\": 8.5,\r\n  \"loanTermMonths\": 36,\r\n  \"purpose\": \"Home renovation including kitchen remodeling and bathroom upgrades\",\r\n  \"collateral\": \"Property deed as collateral\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOAN APPROVAL (Admin)",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "LOAN DISBURSEMENT (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/loans/1/disburse?disbursedBy=1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"1",
+								"disburse"
+							],
+							"query": [
+								{
+									"key": "disbursedBy",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LOAN PAYMENT",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LATE PAYMENT EXAMPLE",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"Late payment - after due date\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Insufficient Balance",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"Late payment - after due date\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VIEW LOAN DETAILS",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NjUzOTk3NTcsImlzcyI6Im1pdS5lZHUiLCJleHAiOjE3NjUzOTk4MTcsInN1YiI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOiIifQ.vXGJlD5pELLKIrTO09PjLt6hfV8TSbuEyGcYmVxUWAvWaqfHkmONSpIXkegojR5Id0f8RKb2wdeySZXPRZW1kA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans/1",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Loans for User",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzUxMiJ9.eyJpYXQiOjE3NjUzOTg3OTQsImlzcyI6Im1pdS5lZHUiLCJleHAiOjE3NjUzOTg4NTQsInN1YiI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOiIifQ.AAI1E0Gc4A-y5joNBKLoN8O4uzyTbpWiGQnADCA9JOxgj-YBfeVsyjqhGrxsLnHhzWqMKswUdJSZkGCtLQperw",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans/user/3",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"user",
+								"3"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User's Active Loans",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans/user/3/active?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"user",
+								"3",
+								"active"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan Summary",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loans/user/5/summary?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loans",
+								"user",
+								"5",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VIEW PAYMENT HISTORY",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments/loan/1?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments",
+								"loan",
+								"1"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Summary",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments/loan/1/summary?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments",
+								"loan",
+								"1",
+								"summary"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VIEW TRANSACTION HISTORY",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments/loan/1/transactions?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments",
+								"loan",
+								"1",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Loan Transaction History by Account Number",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-api-key",
+								"value": "my-super-secret-api-key-12345",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"loanId\": 1,\r\n  \"accountNumber\": \"ACC4015357885\",\r\n  \"paymentAmount\": 1571.82,\r\n  \"paymentMethod\": \"ACCOUNT_DEBIT\",\r\n  \"notes\": \"First monthly payment\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/loan-payments/account/ACC4015357885/transactions?x-api-key=my-super-secret-api-key-12345",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"loan-payments",
+								"account",
+								"ACC4015357885",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "x-api-key",
+									"value": "my-super-secret-api-key-12345"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CreateBankAccount",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"John Doe\",\r\n    \"dob\": \"1990-05-15\",\r\n    \"address\": \"123 Main Street, New York, NY 10001\",\r\n    \"contactNo\": \"+1-555-0123\",\r\n    \"ssn\": \"123-45-6789\",\r\n    \"createdBy\": \"Tanveer\",\r\n    \"accountType\": \"SAVINGS\",\r\n    \"initialBalance\": 500.00,\r\n    \"interestRate\": 3,\r\n    \"overdraftLimit\": 500,\r\n    \"accountCreatedBy\" : 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/accounts/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"accounts",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deposit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"accountNo\": \"ACC4015357885\",\r\n    \"name\": \"John Doe\",\r\n    \"contactNo\": \"+1-555-0123\",\r\n    \"amount\": 70.00\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/accounts/deposit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"accounts",
+						"deposit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "withdrawl",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "my-super-secret-api-key-12345",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"accountNo\": \"ACC4015357885\",\r\n    \"name\": \"John Doe\",\r\n    \"contactNo\": \"+1-555-0123\",\r\n    \"amount\": 49000.00\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/accounts/withdrawal",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"accounts",
+						"withdrawal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Transactions",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "my-super-secret-api-key-12345",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"accountNo\": \"ACC4015357885\",\r\n    \"name\": \"John Doe\",\r\n    \"contactNo\": \"+1-555-0123\",\r\n    \"isMasterUser\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/accounts/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"accounts",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "x-api-key",
+						"value": "my-super-secret-api-key-12345",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\":\"admin\",\r\n    \"password\":\"adminroot\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register User for Customer for BankApp",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"johndoe123\",\r\n    \"password\": \"SecurePass123\",\r\n    \"name\": \"John Doe\",\r\n    \"contactNo\": \"+1-555-0123\",\r\n    \"accountNumber\": \"ACC4015357885\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Payee",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"John Smith\",\r\n    \"nickname\": \"Johnny\",\r\n    \"email\": \"john.smith@email.com\",\r\n    \"phone\": \"+1-555-123-4567\",\r\n    \"accountNo\": \"ACC4015357885\",\r\n    \"userId\": 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/payees/create",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"payees",
+						"create"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Pay Bill",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"customer_account\": \"ACC4015357885\",\r\n    \"payeeAccount\": \"ACC4015357885\",\r\n    \"payment_type\": \"ONCE\",\r\n    \"amount\": 200.00,\r\n    \"description\": \"payement to Account ACC4015357885\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/bill-payment/pay",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"bill-payment",
+						"pay"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
