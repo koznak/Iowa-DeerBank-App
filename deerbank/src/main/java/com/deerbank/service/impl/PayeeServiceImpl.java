@@ -35,7 +35,7 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeResponse createPayee(PayeeRequest payeeRequest) {
 
-        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
+        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getCustomeraccount(), "ACTIVE").orElseThrow(
                 () -> new ResourceNotFoundException("Account Not Found")
         );
 

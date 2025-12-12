@@ -36,4 +36,8 @@ public class PayeeRequest {
     @Size(max = 20, message = "Account No should be 20 digits")
     private String accountNo;
 
+    @NotBlank(message = "Customer Account No is required")
+    @Size(max = 20, message = "Account No should be 20 digits")
+    private String customeraccount;
+
 }
