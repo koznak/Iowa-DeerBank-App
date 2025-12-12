@@ -35,9 +35,9 @@ public class PayeeServiceImpl implements PayeeService {
     @Override
     public PayeeResponse createPayee(PayeeRequest payeeRequest) {
 
-//        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
-//                () -> new ResourceNotFoundException("Account Not Found")
-//        );
+        Account foundAcc = accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
+                () -> new ResourceNotFoundException("Account Not Found")
+        );
 
         Optional<Payee> checkAccount = payeeRepository.findByAccountNo(payeeRequest.getAccountNo());
 
@@ -52,7 +52,7 @@ public class PayeeServiceImpl implements PayeeService {
         payee.setPhone(payeeRequest.getPhone());
         payee.setAccountNo(payeeRequest.getAccountNo());
         payee.setStatus("Active");
-        payee.setUserUserId(payeeRequest.getUserId());
+        payee.setUserUserId(foundAcc.getSerUserId());
 
 
         Payee createdPayee = payeeRepository.save(payee);
@@ -88,7 +88,7 @@ public class PayeeServiceImpl implements PayeeService {
         payee.setPhone(payeeRequest.getPhone());
         payee.setAccountNo(existingPayee.getAccountNo());
         payee.setStatus("Active");
-        payee.setUserUserId(payeeRequest.getUserId());
+        payee.setUserUserId(foundAcc.getSerUserId());
 
 
         Payee createdPayee=payeeRepository.save(payee);

@@ -36,6 +36,4 @@ public class PayeeRequest {
     @Size(max = 20, message = "Account No should be 20 digits")
     private String accountNo;
 
-    @NotNull(message = "User ID is required")
-    private Integer userId;
 }
