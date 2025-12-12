@@ -249,9 +249,7 @@ public class AuthServiceImpl implements AuthService {
 
     public String getToken(Credential user) {
 
-        String token = jwtService.generateToken(user);
-
-        return token;
+        return jwtService.generateToken(user);
     }
 
 }
