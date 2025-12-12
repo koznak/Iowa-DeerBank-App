@@ -35,4 +35,6 @@ public class RegisterRequest {
     @NotBlank(message = "Account Number is required")
     private String accountNumber;
 
+    private Boolean isAdmin = false;
+
 }

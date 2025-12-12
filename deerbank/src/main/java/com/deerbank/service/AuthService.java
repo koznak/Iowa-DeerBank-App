@@ -1,8 +1,6 @@
 package com.deerbank.service;
 
-import com.deerbank.dto.LoginRequest;
-import com.deerbank.dto.LoginResponse;
-import com.deerbank.dto.RegisterRequest;
+import com.deerbank.dto.*;
 
 public interface AuthService {
 
@@ -10,4 +8,5 @@ public interface AuthService {
 
     LoginResponse register(RegisterRequest request);
 
+    UpdatePasswordResponse updatePassword(UpdatePasswordRequest request);
 }

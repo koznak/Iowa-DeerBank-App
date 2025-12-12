@@ -14,6 +14,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -32,8 +34,13 @@ public class SecurityConfig {
     private final ApiKeyProperties apiKeyProperties;
 
     public SecurityConfig( ApiKeyProperties apiKeyProperties) {
-//        this.jwtFilter = jwtFilter;
         this.apiKeyProperties = apiKeyProperties;
+    }
+
+    // ⭐ NEW: Password Encoder Bean
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     // 1. Define the AuthenticationManager Bean using our custom Provider

@@ -1,9 +1,7 @@
 package com.deerbank.service.impl;
 
 import com.deerbank.Security.JwtService;
-import com.deerbank.dto.LoginRequest;
-import com.deerbank.dto.LoginResponse;
-import com.deerbank.dto.RegisterRequest;
+import com.deerbank.dto.*;
 import com.deerbank.entity.Account;
 import com.deerbank.entity.Credential;
 import com.deerbank.entity.User;
@@ -44,17 +42,23 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private JwtService jwtService;
 
+    //NEW: Inject PasswordEncoder
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
         // 1. Find credential by username
+        System.out.println("Password::: "+passwordEncoder.encode(request.getPassword()));
+
         Credential credential = credentialRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
-        // 2. Verify password (in production, use BCrypt or similar)
-        if (!credential.getPassword().equals(request.getPassword())) {
+        // 2. Verify password using Bcrypt
+        if (!passwordEncoder.matches(request.getPassword(), credential.getPassword())) {
             throw new RuntimeException("Invalid username or password");
         }
 
@@ -114,45 +118,79 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Username already exists");
         }
 
-        // 2. Create credential FIRST
+        // 2. Create credential with ENCRYPTED password
         Credential credential = new Credential();
         credential.setUsername(request.getUsername());
-        credential.setPassword(request.getPassword()); // In production, hash this!
-        credential.setAdminType(0); // 0 = Customer
+        credential.setPassword(passwordEncoder.encode(request.getPassword()));
+        credential.setAdminType(Boolean.TRUE.equals(request.getIsAdmin()) ? 1 : 0);
         credential.setStatus("ACTIVE");
         credential.setCreatedDate(now);
         credential.setUpdatedDate(now);
 
         Credential savedCredential = credentialRepository.save(credential);
+        System.out.println(" Created Credential ID: " + savedCredential.getId() +
+                " | Type: " + (savedCredential.getAdminType() == 1 ? "ADMIN" : "CUSTOMER"));
 
-        System.out.println("Created Credential ID: " + savedCredential.getId());
+        // 3. If ADMIN registration, return immediately WITHOUT linking to user/account
+        if (savedCredential.getAdminType() == 1) {
+            LoginResponse response = new LoginResponse();
+            response.setCredentialId(savedCredential.getId());
+            response.setUsername(savedCredential.getUsername());
+            response.setUserType("ADMIN");
+            response.setStatus(savedCredential.getStatus());
+            response.setToken(getToken(savedCredential));
 
-        // 2. Update account with credentials_id reference
+            System.out.println("Admin account created - NO user/account association");
+            return response;
+        }
+
+        // 4. For CUSTOMER registration, link with existing account
+        if (request.getAccountNumber() == null || request.getAccountNumber().isBlank()) {
+            throw new RuntimeException("Account number is required for customer registration");
+        }
 
         Optional<Account> customerAccount = accountRepository.findByAccountNo(request.getAccountNumber());
 
-        if(customerAccount.isEmpty()){
-            throw new RuntimeException("Account does not exists");
+        if (customerAccount.isEmpty()) {
+            throw new RuntimeException("Account does not exist with account number: " + request.getAccountNumber());
         }
+
         Account account = customerAccount.get();
-        account.setCredentialsId(savedCredential.getId()); // Reference to credential
+
+        // Verify account is not already linked
+        if (account.getCredentialsId() != null && account.getCredentialsId() > 0) {
+            throw new RuntimeException("This account is already registered to another user");
+        }
+
+        account.setCredentialsId(savedCredential.getId());
         account.setUpdateDate(LocalDateTime.now());
         Account savedAccount = accountRepository.save(account);
-        System.out.println("Created Account ID: " + savedAccount.getAccountId() + " with Credentials ID: " + savedAccount.getCredentialsId());
+        System.out.println("Linked Account ID: " + savedAccount.getAccountId());
 
-        // 3. Update user with credentials_id reference
+        // 5. Update user with credentials_id
         Optional<User> userDetail = userRepository.findById(customerAccount.get().getSerUserId());
 
-        if(userDetail.isEmpty()) {
-            throw new RuntimeException("Account does not exists");
+        if (userDetail.isEmpty()) {
+            throw new RuntimeException("User not found for this account");
         }
+
         User user = userDetail.get();
+
+        if (user.getCredentialsId() != null && user.getCredentialsId() > 0) {
+            throw new RuntimeException("This user is already registered");
+        }
+
         user.setCredentialsId(credential.getId());
         user.setUpdateDate(LocalDateTime.now());
         User savedUser = userRepository.save(user);
-        System.out.println("Created User ID: " + savedUser.getUserId() + " with Credentials ID: " + savedUser.getCredentialsId());
+        System.out.println(" Linked User ID: " + savedUser.getUserId());
 
-        // 4. Build response
+        // 6. Build response
+        return response(savedCredential, savedUser, savedAccount);
+    }
+
+    private LoginResponse response(Credential savedCredential, User savedUser, Account savedAccount) {
+
         LoginResponse response = new LoginResponse();
         response.setCredentialId(savedCredential.getId());
         response.setUsername(savedCredential.getUsername());
@@ -167,11 +205,47 @@ public class AuthServiceImpl implements AuthService {
         response.setAccountNo(savedAccount.getAccountNo());
         response.setAccountType(savedAccount.getAccountType());
         response.setBalance(savedAccount.getBalance());
+        response.setToken(getToken(savedCredential));
 
         return response;
     }
 
+    // Update Password Method
+    @Transactional
+    public UpdatePasswordResponse updatePassword(UpdatePasswordRequest request) {
+        // 1. Find credential by username
+        Credential credential = credentialRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
+        // 2. Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), credential.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // 3. Validate new password
+        if (request.getNewPassword().equals(request.getCurrentPassword())) {
+            throw new RuntimeException("New password must be different from current password");
+        }
+
+        if (request.getNewPassword().length() < 6) {
+            throw new RuntimeException("New password must be at least 6 characters long");
+        }
+
+        // 4. Update password with encryption
+        credential.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        credential.setUpdatedDate(LocalDateTime.now());
+        credentialRepository.save(credential);
+
+        System.out.println(" Password updated for user: " + credential.getUsername());
+
+        // 5. Build response
+        UpdatePasswordResponse response = new UpdatePasswordResponse();
+        response.setUsername(credential.getUsername());
+        response.setMessage("Password updated successfully");
+        response.setUpdatedDate(LocalDateTime.now());
+
+        return response;
+    }
 
     public String getToken(Credential user) {
 

@@ -1,8 +1,6 @@
 package com.deerbank.controller;
 
-import com.deerbank.dto.LoginRequest;
-import com.deerbank.dto.LoginResponse;
-import com.deerbank.dto.RegisterRequest;
+import com.deerbank.dto.*;
 import com.deerbank.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +71,34 @@ public class AuthController {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "Registration failed: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @PostMapping("/update-password")
+    public ResponseEntity<?> updatePassword(@Valid @RequestBody UpdatePasswordRequest request) {
+        try {
+            UpdatePasswordResponse response = authService.updatePassword(request);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", response.getMessage());
+            result.put("data", response);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Password update failed: " + e.getMessage());
 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
