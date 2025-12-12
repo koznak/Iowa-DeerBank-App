@@ -74,7 +74,7 @@ public class PayeeServiceImpl implements PayeeService {
 
     @Override
     public PayeeResponse updatePayee(PayeeRequest payeeRequest, int id) {
-        Account foundAcc=accountRepository.findByAccountNoAndStatus(payeeRequest.getAccountNo(), "ACTIVE").orElseThrow(
+        Account foundAcc=accountRepository.findByAccountNoAndStatus(payeeRequest.getCustomeraccount(), "ACTIVE").orElseThrow(
                 () -> new ResourceNotFoundException("Account Not Found")
         );
         Payee existingPayee= payeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Your account have some issue. Contact to the Banker!"));
@@ -102,7 +102,8 @@ public class PayeeServiceImpl implements PayeeService {
         Payee payeeData=payeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Payee ID cannot found"));
 
         PayeeResponse payeeResponse= convertToResponse(payeeData);
-        payeeResponse.setAccountNo(accountRepository.findByAccountNo(payeeData.getAccountNo()).get().getAccountNo());
+        List<Account> account =  accountRepository.findBySerUserId(payeeData.getUserUserId());
+        payeeResponse.setAccountNo(account.getFirst().getAccountNo());
 
         return payeeResponse;
     }
