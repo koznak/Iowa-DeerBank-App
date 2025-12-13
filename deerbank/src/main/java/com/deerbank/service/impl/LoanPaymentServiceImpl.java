@@ -46,6 +46,11 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
         Loan loan = loanRepository.findById(paymentDTO.getLoanId())
                 .orElseThrow(() -> new RuntimeException("Loan not found"));
 
+        // Check if loan is already paid off
+        if ("PAID_OFF".equals(loan.getStatus())) {
+            throw new RuntimeException("This loan is already paid off. No further payments can be made.");
+        }
+
         if (!"ACTIVE".equals(loan.getStatus())) {
             throw new RuntimeException("Can only make payments on active loans. Current status: " + loan.getStatus());
         }
@@ -56,6 +61,18 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
 
         if (!"ACTIVE".equals(account.getStatus())) {
             throw new RuntimeException("Account must be active to make payments. Current status: " + account.getStatus());
+        }
+
+        //Check if remaining balance is zero or negative
+        if (loan.getRemainingBalance().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("This loan has no remaining balance. Loan is paid off.");
+        }
+
+        //Check if payment amount exceeds remaining balance
+        if (paymentDTO.getPaymentAmount().compareTo(loan.getRemainingBalance()) > 0) {
+            throw new RuntimeException("Payment amount ($" + paymentDTO.getPaymentAmount() +
+                    ") exceeds remaining balance ($" + loan.getRemainingBalance() +
+                    "). Please enter a payment amount equal to or less than the remaining balance.");
         }
 
         // Validate account belongs to the loan's user
@@ -100,6 +117,14 @@ public class LoanPaymentServiceImpl implements LoanPaymentService {
 
         // Update loan
         BigDecimal newBalance = loan.getRemainingBalance().subtract(principalAmount);
+
+        // Prevent negative balance (should not happen with above checks, but safety measure)
+        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            newBalance = BigDecimal.ZERO;
+        }
+
+
+
         loan.setRemainingBalance(newBalance);
         loan.setTotalPaymentsMade(loan.getTotalPaymentsMade() + 1);
         loan.setNextPaymentDate(LocalDate.now().plusMonths(1));

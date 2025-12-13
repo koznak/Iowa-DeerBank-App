@@ -26,4 +26,6 @@ public interface AccountService{
     List<TransactionHistoryDTO> getTransactions(GetTransactionsRequest request);
 
     TransferResponse transferBetweenAccounts(TransferRequest request);
+
+    BalanceInquiryResponse getBalance(BalanceInquiryRequest request);
 }

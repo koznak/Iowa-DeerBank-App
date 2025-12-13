@@ -154,4 +154,32 @@ public class AccountController {
         }
     }
 
+    @PostMapping("/balance")
+    public ResponseEntity<?> getBalance(@Valid @RequestBody BalanceInquiryRequest request) {
+        try {
+            BalanceInquiryResponse response = accountService.getBalance(request);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", response.getMessage());
+            result.put("data", response);
+
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        } catch (RuntimeException e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Failed to retrieve balance: " + e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
 }

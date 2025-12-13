@@ -425,5 +425,41 @@ public class AccountServiceImpl implements AccountService {
         return response;
     }
 
+    @Override
+    public BalanceInquiryResponse getBalance(@Valid BalanceInquiryRequest request) {
+
+        // 1. Find account by account number
+        Account account = accountRepository.findByAccountNo(request.getAccountNo())
+                .orElseThrow(() -> new RuntimeException("Account not found with account number: " + request.getAccountNo()));
+
+        // 2. Get user details
+        User user = userRepository.findById(account.getSerUserId())
+                .orElseThrow(() -> new RuntimeException("User not found for this account"));
+
+
+        // 4. Build response
+        BalanceInquiryResponse response = new BalanceInquiryResponse();
+
+        // Account details
+        response.setAccountId(account.getAccountId());
+        response.setAccountNo(account.getAccountNo());
+        response.setAccountType(account.getAccountType());
+        response.setCurrentBalance(account.getBalance());
+        response.setStatus(account.getStatus());
+        response.setLastUpdated(account.getUpdateDate() != null ? account.getUpdateDate() : account.getOpenedDate());
+        response.setInterestRate(account.getInterestRate());
+        response.setOverdraftLimit(account.getOverdraftLimit());
+        response.setOpenedDate(account.getOpenedDate());
+
+        // User details
+        response.setUserId(user.getUserId());
+        response.setUserName(user.getName());
+        response.setContactNo(user.getContactNo());
+
+        response.setMessage("Balance retrieved successfully");
+
+        return response;
+    }
+
 
 }
